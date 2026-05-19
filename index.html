@@ -1,36 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pobreflix</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Pobreflix - Streaming Leve</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- TELA INICIAL: CATÁLOGO -->
-  <div id="tela-catalogo">
-    <header id="cabecalho">
-      <div id="logo">POBREFLIX</div>
-      <div id="info-nav">Use as setas e ENTER para navegar</div>
-    </header>
-
-    <main id="catalogo">
-      <!-- Cards gerados pelo script.js -->
-    </main>
-  </div>
-
-  <!-- TELA DO PLAYER -->
-  <div id="tela-player" class="oculto">
-    <div id="barra-player">
-      <button id="btn-voltar" tabindex="0">&#8592; Voltar</button>
-      <span id="titulo-player"></span>
+    <!-- Cabeçalho simples -->
+    <div class="header">
+        <h1 class="logo">POBREFLIX</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Pesquisar filmes..." class="search-input">
+        </div>
     </div>
-    <video id="video" controls preload="none" tabindex="0">
-      Seu navegador não suporta vídeo HTML5.
-    </video>
-  </div>
 
-  <script src="script.js"></script>
+    <!-- Categorias -->
+    <div class="categories">
+        <div class="category active" data-cat="all">TODOS</div>
+        <div class="category" data-cat="acao">AÇÃO</div>
+        <div class="category" data-cat="comedia">COMÉDIA</div>
+        <div class="category" data-cat="drama">DRAMA</div>
+        <div class="category" data-cat="ficcao">FICÇÃO</div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display:none;">
+        <div class="spinner"></div>
+        <div>CARREGANDO...</div>
+    </div>
+
+    <!-- Lista de filmes -->
+    <div id="filmesContainer" class="filmes-container">
+        <!-- Os filmes serão inseridos aqui via JS -->
+    </div>
+
+    <!-- Modal do player -->
+    <div id="playerModal" class="player-modal" style="display:none;">
+        <div class="modal-content">
+            <div class="close-btn" id="closePlayer">✕</div>
+            <div class="video-container">
+                <video id="videoPlayer" controls>
+                    Seu navegador não suporta vídeo HTML5.
+                </video>
+            </div>
+            <div class="video-info">
+                <h3 id="videoTitle"></h3>
+                <div class="error-msg" id="errorMsg" style="display:none;">
+                    <p>Erro ao carregar o vídeo!</p>
+                    <button id="retryBtn" class="retry-btn">TENTAR NOVAMENTE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensagem de erro global -->
+    <div id="globalError" class="global-error" style="display:none;"></div>
+
+    <script src="script.js"></script>
 </body>
 </html>
