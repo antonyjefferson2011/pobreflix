@@ -1,256 +1,347 @@
-/*
-  POBREFLIX - script.js
-  JavaScript puro, sem frameworks, sem frescura.
-  Compatível com navegadores antigos (LG webOS).
-*/
-
-/* ==============================
-   LISTA DE FILMES
-   Adicione seus filmes aqui.
-   - arquivo: nome do arquivo sem extensão (ex: "titan")
-   - titulo: nome exibido na tela
-   - capa: true se tiver .jpg em /capas, false para ícone
-============================== */
+// LISTA DE FILMES - FÁCIL DE EDITAR
 var FILMES = [
-  { arquivo: "lula",        titulo: "transformes 4" },
-
-  /* Adicione mais filmes aqui no mesmo formato */
+    {
+        titulo: "Velozes e Furiosos 10",
+        capa: "https://image.tmdb.org/t/p/w500/1E5baAaEse26fej7uHcjOgEE2t2.jpg",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        categoria: "acao"
+    },
+    {
+        titulo: "A Era do Gelo",
+        capa: "https://image.tmdb.org/t/p/w500/gLEhJcMZgE5d5T8C6E5hK9vXv7U.jpg",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+        categoria: "comedia"
+    },
+    {
+        titulo: "Interestelar",
+        capa: "https://image.tmdb.org/t/p/w500/rAiYTfCCqDpZcckGxWU5d5HkX8M.jpg",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFunflies.mp4",
+        categoria: "ficcao"
+    },
+    {
+        titulo: "O Poderoso Chefão",
+        capa: "https://image.tmdb.org/t/p/w500/rPdtLWN11ZgA3KvhO4T1w2v7X5V.jpg",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+        categoria: "drama"
+    },
+    {
+        titulo: "Vingadores: Ultimato",
+        capa: "https://image.tmdb.org/t/p/w500/qmDpIHrmpJINaRKAfWQfftjCwwi.jpg",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        categoria: "acao"
+    },
+    {
+        titulo: "Meu Malvado Favorito",
+        capa: "https://image.tmdb.org/t/p/w500/5K2ZpXh2P6L2wXq4x5mH6qJ8j7K.jpg",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+        categoria: "comedia"
+    }
 ];
 
-/* ==============================
-   VARIÁVEIS GLOBAIS
-============================== */
-var cards = [];          // lista de elementos DOM dos cards
-var indiceAtual = 0;     // card com foco atual
-var totalCards = 0;
-var cardsPerRow = 0;
+// Variáveis globais
+var filmesContainer = document.getElementById('filmesContainer');
+var searchInput = document.getElementById('searchInput');
+var playerModal = document.getElementById('playerModal');
+var videoPlayer = document.getElementById('videoPlayer');
+var videoTitle = document.getElementById('videoTitle');
+var closePlayer = document.getElementById('closePlayer');
+var loading = document.getElementById('loading');
+var errorMsg = document.getElementById('errorMsg');
+var retryBtn = document.getElementById('retryBtn');
+var currentVideo = '';
+var currentIndex = 0;
+var allCards = [];
 
-/* ==============================
-   ELEMENTOS DO DOM
-============================== */
-var elCatalogo    = document.getElementById("catalogo");
-var elTelaPlayer  = document.getElementById("tela-player");
-var elTelaCat     = document.getElementById("tela-catalogo");
-var elVideo       = document.getElementById("video");
-var elTituloPlay  = document.getElementById("titulo-player");
-var elBtnVoltar   = document.getElementById("btn-voltar");
+// Categorias
+var categories = document.querySelectorAll('.category');
+var currentCategory = 'all';
+var searchTerm = '';
 
-/* ==============================
-   INICIALIZAÇÃO
-============================== */
-function init() {
-  renderCatalogo();
-  cards = elCatalogo.querySelectorAll(".card");
-  totalCards = cards.length;
+// LocalStorage para "continuar assistindo"
+var continueWatching = null;
 
-  if (totalCards === 0) return;
-
-  calcCardsPerRow();
-  focarCard(0);
-
-  document.addEventListener("keydown", onKeyDown);
-  elBtnVoltar.addEventListener("click", fecharPlayer);
-  elBtnVoltar.addEventListener("keydown", function(e) {
-    if (e.keyCode === 13) fecharPlayer(); // ENTER
-  });
-
-  // Recalcula colunas se a janela mudar (improvável na TV, mas seguro)
-  window.onresize = calcCardsPerRow;
-}
-
-/* ==============================
-   RENDERIZAR CATÁLOGO
-============================== */
-function renderCatalogo() {
-  var html = "";
-  for (var i = 0; i < FILMES.length; i++) {
-    var f = FILMES[i];
-    var capaHtml = '<img class="card-capa" src="capas/' + f.arquivo + '.jpg" alt="' + f.titulo + '" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">'
-                 + '<div class="card-sem-capa" style="display:none">&#9654;</div>';
-
-    html += '<div class="card" tabindex="0" data-index="' + i + '" data-arquivo="' + f.arquivo + '" data-titulo="' + f.titulo + '">'
-          +   capaHtml
-          +   '<div class="card-titulo">' + f.titulo + '</div>'
-          + '</div>';
-  }
-  elCatalogo.innerHTML = html;
-
-  // Eventos de clique nos cards
-  var cardEls = elCatalogo.querySelectorAll(".card");
-  for (var j = 0; j < cardEls.length; j++) {
-    (function(el) {
-      el.addEventListener("click", function() {
-        abrirFilme(el.getAttribute("data-arquivo"), el.getAttribute("data-titulo"));
-      });
-      el.addEventListener("focus", function() {
-        var idx = parseInt(el.getAttribute("data-index"), 10);
-        indiceAtual = idx;
-        destacarCard(idx);
-      });
-    })(cardEls[j]);
-  }
-}
-
-/* ==============================
-   CALCULAR COLUNAS
-============================== */
-function calcCardsPerRow() {
-  if (totalCards === 0) return;
-  var primeiro = cards[0];
-  var containerLeft = elCatalogo.getBoundingClientRect().left;
-  var cardWidth = primeiro.getBoundingClientRect().width;
-  var containerWidth = elCatalogo.clientWidth;
-
-  // Estima colunas pela largura total / largura do card + gap
-  cardsPerRow = Math.max(1, Math.floor(containerWidth / (cardWidth + 28)));
-}
-
-/* ==============================
-   FOCO E NAVEGAÇÃO
-============================== */
-function focarCard(idx) {
-  if (idx < 0 || idx >= totalCards) return;
-  indiceAtual = idx;
-  destacarCard(idx);
-  cards[idx].focus();
-  scrollParaCard(idx);
-}
-
-function destacarCard(idx) {
-  for (var i = 0; i < totalCards; i++) {
-    cards[i].classList.remove("ativo");
-  }
-  if (cards[idx]) cards[idx].classList.add("ativo");
-}
-
-function scrollParaCard(idx) {
-  if (cards[idx]) {
-    cards[idx].scrollIntoView({ block: "nearest", behavior: "auto" });
-  }
-}
-
-/* ==============================
-   TECLAS DO CONTROLE REMOTO
-============================== */
-function onKeyDown(e) {
-  var key = e.keyCode;
-
-  // Se player aberto
-  if (!elTelaPlayer.classList.contains("oculto")) {
-    if (key === 8 || key === 27 || key === 461) { // BACK / ESC / LG Back
-      fecharPlayer();
-      e.preventDefault();
+// Carregar dados salvos
+function loadSavedData() {
+    try {
+        var saved = localStorage.getItem('pobreflix_continue');
+        if (saved) {
+            continueWatching = JSON.parse(saved);
+        }
+    } catch(e) {
+        console.log('Erro ao carregar dados');
     }
-    return;
-  }
-
-  // Catálogo
-  switch (key) {
-    case 37: // Seta esquerda
-      moverFoco(-1);
-      e.preventDefault();
-      break;
-    case 39: // Seta direita
-      moverFoco(1);
-      e.preventDefault();
-      break;
-    case 38: // Seta cima
-      moverFoco(-cardsPerRow);
-      e.preventDefault();
-      break;
-    case 40: // Seta baixo
-      moverFoco(cardsPerRow);
-      e.preventDefault();
-      break;
-    case 13: // ENTER / OK
-      abrirFilmeAtual();
-      e.preventDefault();
-      break;
-    case 8:  // BACK (alguns navegadores)
-    case 27: // ESC
-    case 461:// LG webOS Back
-      // No catálogo, não faz nada especial
-      break;
-  }
 }
 
-function moverFoco(delta) {
-  var novo = indiceAtual + delta;
-  if (novo < 0) novo = 0;
-  if (novo >= totalCards) novo = totalCards - 1;
-  focarCard(novo);
+// Salvar progresso
+function saveProgress(filmeId, time) {
+    try {
+        var data = {
+            filmeId: filmeId,
+            time: time,
+            titulo: FILMES[filmeId].titulo
+        };
+        localStorage.setItem('pobreflix_continue', JSON.stringify(data));
+        continueWatching = data;
+    } catch(e) {}
 }
 
-/* ==============================
-   ABRIR FILME
-============================== */
-function abrirFilmeAtual() {
-  if (!cards[indiceAtual]) return;
-  var arquivo = cards[indiceAtual].getAttribute("data-arquivo");
-  var titulo  = cards[indiceAtual].getAttribute("data-titulo");
-  abrirFilme(arquivo, titulo);
+// Renderizar filmes com lazy loading
+function renderFilmes() {
+    var filtered = FILMES.filter(function(filme) {
+        var matchCat = currentCategory === 'all' || filme.categoria === currentCategory;
+        var matchSearch = searchTerm === '' || filme.titulo.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1;
+        return matchCat && matchSearch;
+    });
+    
+    if (filtered.length === 0) {
+        filmesContainer.innerHTML = '<div style="text-align:center;padding:50px;">Nenhum filme encontrado</div>';
+        return;
+    }
+    
+    var html = '';
+    for (var i = 0; i < filtered.length; i++) {
+        var f = filtered[i];
+        html += '<div class="filme-card" data-id="' + i + '" data-titulo="' + escapeHtml(f.titulo) + '" data-video="' + escapeHtml(f.video) + '" data-capa="' + escapeHtml(f.capa) + '" tabindex="0">';
+        html += '<img class="filme-capa" src="' + f.capa + '" alt="' + escapeHtml(f.titulo) + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/300x450?text=ERRO\'">';
+        html += '<div class="filme-titulo">' + escapeHtml(f.titulo) + '</div>';
+        html += '</div>';
+    }
+    
+    filmesContainer.innerHTML = html;
+    
+    // Reaplicar eventos
+    allCards = document.querySelectorAll('.filme-card');
+    for (var j = 0; j < allCards.length; j++) {
+        (function(card) {
+            card.addEventListener('click', function(e) {
+                var titulo = card.getAttribute('data-titulo');
+                var video = card.getAttribute('data-video');
+                openPlayer(titulo, video);
+            });
+        })(allCards[j]);
+    }
+    
+    // Destacar continuar assistindo
+    highlightContinueWatching();
 }
 
-function abrirFilme(arquivo, titulo) {
-  elTituloPlay.textContent = titulo;
-  elVideo.src = "filmes/" + arquivo + ".mp4";
-  elVideo.load();
-
-  elTelaPlayer.classList.remove("oculto");
-  elTelaCat.style.display = "none";
-
-  // Tenta tela cheia
-  tentarTelaCheia();
-
-  // Foca o vídeo para controle pelo controle remoto
-  setTimeout(function() {
-    elVideo.focus();
-    elVideo.play();
-  }, 100);
+// Função auxiliar para evitar XSS
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
 }
 
-function fecharPlayer() {
-  elVideo.pause();
-  elVideo.src = "";
-
-  elTelaPlayer.classList.add("oculto");
-  elTelaCat.style.display = "";
-
-  sairTelaCheia();
-
-  // Retorna foco ao card que estava selecionado
-  setTimeout(function() {
-    focarCard(indiceAtual);
-  }, 50);
+// Destacar filme para continuar assistindo
+function highlightContinueWatching() {
+    if (!continueWatching) return;
+    
+    var cards = document.querySelectorAll('.filme-card');
+    for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        var titulo = card.getAttribute('data-titulo');
+        if (titulo === continueWatching.titulo) {
+            card.style.border = '3px solid #e50914';
+            var badge = document.createElement('div');
+            badge.style.position = 'absolute';
+            badge.style.background = '#e50914';
+            badge.style.color = 'white';
+            badge.style.padding = '2px 8px';
+            badge.style.fontSize = '12px';
+            badge.innerText = 'CONTINUAR';
+            card.style.position = 'relative';
+            card.appendChild(badge);
+        }
+    }
 }
 
-/* ==============================
-   TELA CHEIA (compatível)
-============================== */
-function tentarTelaCheia() {
-  var el = document.documentElement;
-  try {
-    if (el.requestFullscreen)            el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    else if (el.mozRequestFullScreen)    el.mozRequestFullScreen();
-    else if (el.msRequestFullscreen)     el.msRequestFullscreen();
-  } catch(e) { /* TV pode não suportar */ }
+// Abrir player
+function openPlayer(titulo, videoUrl) {
+    currentVideo = videoUrl;
+    videoTitle.innerText = titulo;
+    videoPlayer.src = videoUrl;
+    playerModal.style.display = 'flex';
+    errorMsg.style.display = 'none';
+    
+    // Tentar dar play automaticamente
+    setTimeout(function() {
+        videoPlayer.play().catch(function(e) {
+            console.log('Autoplay bloqueado:', e);
+            // Mostrar controles para usuário iniciar manualmente
+        });
+    }, 100);
+    
+    // Adicionar evento de timeupdate para salvar progresso
+    videoPlayer.removeEventListener('timeupdate', saveTimeUpdate);
+    videoPlayer.addEventListener('timeupdate', saveTimeUpdate);
+    
+    // Encontrar índice do filme
+    for (var i = 0; i < FILMES.length; i++) {
+        if (FILMES[i].video === videoUrl) {
+            currentIndex = i;
+            break;
+        }
+    }
 }
 
-function sairTelaCheia() {
-  try {
-    if (document.exitFullscreen)            document.exitFullscreen();
-    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    else if (document.mozCancelFullScreen)  document.mozCancelFullScreen();
-    else if (document.msExitFullscreen)     document.msExitFullscreen();
-  } catch(e) { /* ignora */ }
+function saveTimeUpdate() {
+    if (videoPlayer.currentTime > 5) {
+        saveProgress(currentIndex, videoPlayer.currentTime);
+    }
 }
 
-/* ==============================
-   INICIA TUDO
-============================== */
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", init);
-} else {
-  init();
+// Fechar player
+function closePlayerModal() {
+    videoPlayer.pause();
+    videoPlayer.src = '';
+    playerModal.style.display = 'none';
+    errorMsg.style.display = 'none';
 }
+
+// Tratar erro de vídeo
+function handleVideoError() {
+    errorMsg.style.display = 'block';
+}
+
+function retryVideo() {
+    errorMsg.style.display = 'none';
+    videoPlayer.load();
+    videoPlayer.play().catch(function(e) {
+        errorMsg.style.display = 'block';
+    });
+}
+
+// Pesquisa com debounce simples
+var searchTimeout;
+searchInput.addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        searchTerm = e.target.value;
+        renderFilmes();
+    }, 300);
+});
+
+// Categorias
+for (var i = 0; i < categories.length; i++) {
+    (function(cat) {
+        cat.addEventListener('click', function() {
+            var selected = this.getAttribute('data-cat');
+            for (var j = 0; j < categories.length; j++) {
+                categories[j].classList.remove('active');
+            }
+            this.classList.add('active');
+            currentCategory = selected;
+            renderFilmes();
+        });
+    })(categories[i]);
+}
+
+// Navegação por teclado (controle remoto)
+document.addEventListener('keydown', function(e) {
+    var key = e.key;
+    var activeElement = document.activeElement;
+    
+    // Fechar modal com ESC
+    if (key === 'Escape' && playerModal.style.display === 'flex') {
+        closePlayerModal();
+        return;
+    }
+    
+    // Fechar modal com Backspace em TVs
+    if (key === 'Backspace' && playerModal.style.display === 'flex') {
+        e.preventDefault();
+        closePlayerModal();
+        return;
+    }
+    
+    // Navegação nos cards
+    if (playerModal.style.display !== 'flex' && allCards.length > 0) {
+        if (key === 'ArrowRight') {
+            e.preventDefault();
+            var next = getNextFocusable(activeElement, allCards, 1);
+            if (next) next.focus();
+        } else if (key === 'ArrowLeft') {
+            e.preventDefault();
+            var prev = getNextFocusable(activeElement, allCards, -1);
+            if (prev) prev.focus();
+        } else if (key === 'ArrowDown') {
+            e.preventDefault();
+            var down = getVerticalFocus(activeElement, allCards, 1);
+            if (down) down.focus();
+        } else if (key === 'ArrowUp') {
+            e.preventDefault();
+            var up = getVerticalFocus(activeElement, allCards, -1);
+            if (up) up.focus();
+        } else if (key === 'Enter') {
+            e.preventDefault();
+            if (activeElement && activeElement.classList && activeElement.classList.contains('filme-card')) {
+                var titulo = activeElement.getAttribute('data-titulo');
+                var video = activeElement.getAttribute('data-video');
+                openPlayer(titulo, video);
+            }
+        }
+    }
+});
+
+// Funções auxiliares de navegação
+function getNextFocusable(current, items, direction) {
+    if (!current || !current.classList || !current.classList.contains('filme-card')) {
+        return items[0];
+    }
+    var currentIndex = -1;
+    for (var i = 0; i < items.length; i++) {
+        if (items[i] === current) {
+            currentIndex = i;
+            break;
+        }
+    }
+    var newIndex = currentIndex + direction;
+    if (newIndex < 0) newIndex = items.length - 1;
+    if (newIndex >= items.length) newIndex = 0;
+    return items[newIndex];
+}
+
+function getVerticalFocus(current, items, direction) {
+    if (!current) return items[0];
+    
+    var currentRect = current.getBoundingClientRect();
+    var bestMatch = null;
+    var bestDistance = Infinity;
+    
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var itemRect = item.getBoundingClientRect();
+        var horizontalOverlap = (currentRect.left < itemRect.right && currentRect.right > itemRect.left);
+        
+        if (horizontalOverlap) {
+            var verticalDiff = direction === 1 ? itemRect.top - currentRect.top : currentRect.top - itemRect.top;
+            if (verticalDiff > 0 && verticalDiff < bestDistance) {
+                bestDistance = verticalDiff;
+                bestMatch = item;
+            }
+        }
+    }
+    
+    return bestMatch || items[0];
+}
+
+// Eventos do player
+closePlayer.addEventListener('click', closePlayerModal);
+videoPlayer.addEventListener('error', handleVideoError);
+retryBtn.addEventListener('click', retryVideo);
+
+// Inicializar
+function init() {
+    loadSavedData();
+    renderFilmes();
+    
+    // Focar no primeiro card
+    setTimeout(function() {
+        if (allCards.length > 0) {
+            allCards[0].focus();
+        }
+    }, 100);
+}
+
+// Iniciar aplicação
+init();
