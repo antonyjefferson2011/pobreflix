@@ -1,0 +1,236 @@
+/* ==============================
+   POBREFLIX - CSS para Smart TV
+   Leve, rápido, sem frescura
+============================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #0a0a0a;
+  color: #f0f0f0;
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden;
+}
+
+/* ==============================
+   CABEÇALHO
+============================== */
+
+#cabecalho {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  padding: 28px 60px 20px 60px;
+  background: #0a0a0a;
+  border-bottom: 2px solid #e50914;
+}
+
+#logo {
+  font-size: 42px;
+  font-weight: 900;
+  color: #e50914;
+  letter-spacing: 4px;
+  font-family: Arial Black, Arial, sans-serif;
+}
+
+#info-nav {
+  font-size: 20px;
+  color: #888;
+}
+
+/* ==============================
+   TELA CATÁLOGO
+============================== */
+
+#tela-catalogo {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+}
+
+#catalogo {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+  gap: 28px;
+  padding: 40px 60px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+}
+
+/* ==============================
+   CARDS DE FILME
+============================== */
+
+.card {
+  width: 220px;
+  cursor: pointer;
+  outline: none;
+  border: 3px solid transparent;
+  border-radius: 6px;
+  background: #1a1a1a;
+  overflow: hidden;
+  -webkit-transition: border-color 0.1s;
+  transition: border-color 0.1s;
+}
+
+/* Foco via teclado/controle remoto */
+.card:focus,
+.card.ativo {
+  border-color: #e50914;
+}
+
+.card-capa {
+  width: 100%;
+  height: 300px;
+  display: block;
+  object-fit: cover;
+  background: #222;
+}
+
+/* Placeholder quando não há capa */
+.card-sem-capa {
+  width: 100%;
+  height: 300px;
+  background: #222;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  font-size: 52px;
+  color: #555;
+}
+
+.card-titulo {
+  padding: 14px 12px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #f0f0f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: #1a1a1a;
+}
+
+/* Hover para mouse (opcional, TV usa foco) */
+.card:hover {
+  border-color: #e50914;
+}
+
+/* ==============================
+   TELA PLAYER
+============================== */
+
+#tela-player {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  z-index: 999;
+}
+
+#barra-player {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  gap: 30px;
+  padding: 18px 40px;
+  background: #111;
+  border-bottom: 2px solid #e50914;
+}
+
+#btn-voltar {
+  background: #e50914;
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  font-size: 22px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  outline: none;
+  font-family: Arial, sans-serif;
+}
+
+#btn-voltar:focus {
+  background: #ff2020;
+  outline: 3px solid #fff;
+}
+
+#titulo-player {
+  font-size: 26px;
+  font-weight: bold;
+  color: #f0f0f0;
+  letter-spacing: 1px;
+}
+
+#video {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  width: 100%;
+  background: #000;
+  outline: none;
+  display: block;
+}
+
+/* ==============================
+   UTILITÁRIOS
+============================== */
+
+.oculto {
+  display: none !important;
+}
+
+/* Scrollbar discreta para TVs que renderizam */
+#catalogo::-webkit-scrollbar {
+  width: 6px;
+}
+#catalogo::-webkit-scrollbar-track {
+  background: #111;
+}
+#catalogo::-webkit-scrollbar-thumb {
+  background: #e50914;
+  border-radius: 3px;
+}

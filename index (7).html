@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pobreflix</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- TELA INICIAL: CATÁLOGO -->
+  <div id="tela-catalogo">
+    <header id="cabecalho">
+      <div id="logo">POBREFLIX</div>
+      <div id="info-nav">Use as setas e ENTER para navegar</div>
+    </header>
+
+    <main id="catalogo">
+      <!-- Cards gerados pelo script.js -->
+    </main>
+  </div>
+
+  <!-- TELA DO PLAYER -->
+  <div id="tela-player" class="oculto">
+    <div id="barra-player">
+      <button id="btn-voltar" tabindex="0">&#8592; Voltar</button>
+      <span id="titulo-player"></span>
+    </div>
+    <video id="video" controls preload="none" tabindex="0">
+      Seu navegador não suporta vídeo HTML5.
+    </video>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
