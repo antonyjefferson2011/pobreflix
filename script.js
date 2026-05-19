@@ -12,12 +12,8 @@
    - capa: true se tiver .jpg em /capas, false para ícone
 ============================== */
 var FILMES = [
-  { arquivo: "titan",        titulo: "Titan" },
-  { arquivo: "aventura",     titulo: "Grande Aventura" },
-  { arquivo: "misterio",     titulo: "O Mistério" },
-  { arquivo: "fantasia",     titulo: "Mundo de Fantasia" },
-  { arquivo: "acao",         titulo: "Ação Total" },
-  { arquivo: "comedia",      titulo: "Comédia Maluca" }
+  { arquivo: "lula",        titulo: "transformes 4" },
+
   /* Adicione mais filmes aqui no mesmo formato */
 ];
 
