@@ -1007,46 +1007,6 @@ function autoResize(el) {
 }
 window.autoResize = autoResize;
 
-// Bubble helpers (for non-save rendering)
-function addUserBubble(text, ts, save) {
-  const area = document.getElementById("chat-area");
-  const welcome = area.querySelector(".chat-welcome");
-  if (welcome) welcome.remove();
-
-  const time = ts ? new Date(ts) : new Date();
-  const timeStr = `${String(time.getHours()).padStart(2,"0")}:${String(time.getMinutes()).padStart(2,"0")}`;
-
-  const msg = document.createElement("div");
-  msg.className = "msg user";
-  msg.innerHTML = `
-    <div class="msg-avatar">👤</div>
-    <div>
-      <div class="msg-bubble">${escapeHtml(text)}</div>
-      <div class="msg-time" style="text-align:right">${timeStr}</div>
-    </div>`;
-  area.appendChild(msg);
-  area.scrollTop = area.scrollHeight;
-  if (save) saveChatToFB("user", text);
-}
-
-function addAIBubble(text, ts, save) {
-  const area = document.getElementById("chat-area");
-  const time = ts ? new Date(ts) : new Date();
-  const timeStr = `${String(time.getHours()).padStart(2,"0")}:${String(time.getMinutes()).padStart(2,"0")}`;
-
-  const msg = document.createElement("div");
-  msg.className = "msg ai";
-  msg.innerHTML = `
-    <div class="msg-avatar">SF</div>
-    <div>
-      <div class="msg-bubble">${escapeHtml(text)}</div>
-      <div class="msg-time">${timeStr}</div>
-    </div>`;
-  area.appendChild(msg);
-  area.scrollTop = area.scrollHeight;
-  if (save) saveChatToFB("ai", text);
-}
-
 // ════════════════════════════════
 //  START
 // ════════════════════════════════
