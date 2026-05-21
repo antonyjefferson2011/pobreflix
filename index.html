@@ -1,58 +1,239 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JARVIS</title>
-
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEXTA-FEIRA · Sistema IA</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-  <div class="sidebar">
-
-    <h2>JARVIS</h2>
-
-    <button>Home</button>
-    <button>Mapa</button>
-    <button>Clima</button>
-    <button>Notas</button>
-    <button>Config</button>
-
+<!-- BOOT SCREEN -->
+<div id="boot-screen">
+  <div class="boot-content">
+    <div class="boot-logo">SF</div>
+    <div class="boot-name">SEXTA-FEIRA</div>
+    <div class="boot-sub">Sistema de IA Pessoal · v2.0</div>
+    <div class="boot-bar"><div class="boot-fill"></div></div>
+    <div class="boot-status" id="boot-status">Inicializando núcleo...</div>
   </div>
+</div>
 
-  <div class="main">
+<!-- MAIN APP -->
+<div id="app" class="hidden">
 
-    <div class="topbar">
-      <span>Sistema Online</span>
-    </div>
-
-    <div class="chat" id="chat">
-
-      <div class="message jarvis">
-        Sistema iniciado.
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark">SF</div>
+      <div class="logo-text">
+        <span class="logo-name">SEXTA-FEIRA</span>
+        <span class="logo-sub">IA Pessoal</span>
       </div>
-
     </div>
+    <div class="topbar-center">
+      <div class="clock-block">
+        <div id="clock-time" class="clock-time">00:00:00</div>
+        <div id="clock-date" class="clock-date">--</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-dots">
+        <span class="dot dot-on" title="IA Online"></span>
+        <span class="dot dot-mem" title="Memória"></span>
+        <span class="dot dot-net" title="Rede"></span>
+      </div>
+      <div id="status-label" class="status-label">Online</div>
+    </div>
+  </header>
 
-    <div class="input-area">
+  <!-- LAYOUT -->
+  <div class="layout">
 
-      <input
-        type="text"
-        id="input"
-        placeholder="Digite um comando..."
-      >
-
-      <button onclick="sendMessage()">
-        Enviar
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <button class="nav-btn active" data-tab="chat" onclick="switchTab('chat')">
+        <span class="nav-icon">💬</span>
+        <span class="nav-label">Chat</span>
       </button>
+      <button class="nav-btn" data-tab="map" onclick="switchTab('map')">
+        <span class="nav-icon">🗺️</span>
+        <span class="nav-label">Mapa</span>
+      </button>
+      <button class="nav-btn" data-tab="weather" onclick="switchTab('weather')">
+        <span class="nav-icon">🌤️</span>
+        <span class="nav-label">Clima</span>
+      </button>
+      <button class="nav-btn" data-tab="memory" onclick="switchTab('memory')">
+        <span class="nav-icon">🧠</span>
+        <span class="nav-label">Memória</span>
+      </button>
+      <button class="nav-btn" data-tab="agenda" onclick="switchTab('agenda')">
+        <span class="nav-icon">📅</span>
+        <span class="nav-label">Agenda</span>
+      </button>
+      <button class="nav-btn" data-tab="config" onclick="switchTab('config')">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Config</span>
+      </button>
+    </nav>
 
-    </div>
+    <!-- MAIN AREA -->
+    <main class="main">
 
+      <!-- ══════════ CHAT TAB ══════════ -->
+      <section class="tab active" id="tab-chat">
+        <div class="tab-header">
+          <h2>Chat com Sexta-Feira</h2>
+          <div class="tab-actions">
+            <button class="icon-btn" onclick="clearChat()" title="Limpar chat">🗑️</button>
+            <button class="icon-btn" onclick="exportChat()" title="Exportar">💾</button>
+          </div>
+        </div>
+        <div class="chat-area" id="chat-area">
+          <div class="chat-welcome">
+            <div class="welcome-orb"></div>
+            <p>Olá! Sou a <strong>Sexta-Feira</strong>, sua assistente IA pessoal.<br>Pode falar comigo por texto ou voz.</p>
+          </div>
+        </div>
+        <div class="indicators">
+          <div class="indicator" id="ind-listening" style="display:none">
+            <span class="pulse-dot"></span> Ouvindo...
+          </div>
+          <div class="indicator" id="ind-thinking" style="display:none">
+            <span class="spin-dot"></span> Pensando...
+          </div>
+        </div>
+        <div class="input-area">
+          <button class="mic-btn" id="mic-btn" onclick="toggleListen()" title="Microfone">🎤</button>
+          <textarea id="user-input" placeholder="Fale com Sexta-Feira..." rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+            oninput="autoResize(this)"></textarea>
+          <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </section>
+
+      <!-- ══════════ MAP TAB ══════════ -->
+      <section class="tab" id="tab-map">
+        <div class="tab-header">
+          <h2>Mapa</h2>
+          <div class="tab-actions">
+            <button class="icon-btn" onclick="locateUser()" title="Minha localização">📍</button>
+          </div>
+        </div>
+        <div id="map"></div>
+        <div class="map-info" id="map-info">Aguardando localização...</div>
+      </section>
+
+      <!-- ══════════ WEATHER TAB ══════════ -->
+      <section class="tab" id="tab-weather">
+        <div class="tab-header">
+          <h2>Clima</h2>
+          <div class="tab-actions">
+            <button class="icon-btn" onclick="fetchWeather()" title="Atualizar">🔄</button>
+          </div>
+        </div>
+        <div class="weather-panel" id="weather-panel">
+          <div class="weather-loading">Detectando localização para clima...</div>
+        </div>
+      </section>
+
+      <!-- ══════════ MEMORY TAB ══════════ -->
+      <section class="tab" id="tab-memory">
+        <div class="tab-header">
+          <h2>Memória</h2>
+          <div class="tab-actions">
+            <button class="icon-btn" onclick="clearMemory()" title="Limpar tudo">🗑️</button>
+          </div>
+        </div>
+        <div class="memory-search">
+          <input type="text" id="mem-search" placeholder="Buscar na memória..." oninput="filterMemory(this.value)" />
+        </div>
+        <div class="memory-list" id="memory-list">
+          <p class="empty-state">Nenhuma memória ainda.</p>
+        </div>
+        <div class="memory-add">
+          <input type="text" id="mem-key" placeholder="Chave (ex: nome)" />
+          <input type="text" id="mem-val" placeholder="Valor (ex: Jefferson)" />
+          <button onclick="addMemoryManual()">Salvar</button>
+        </div>
+      </section>
+
+      <!-- ══════════ AGENDA TAB ══════════ -->
+      <section class="tab" id="tab-agenda">
+        <div class="tab-header">
+          <h2>Agenda</h2>
+          <div class="tab-actions">
+            <button class="icon-btn" onclick="showAddEvent()" title="Novo evento">➕</button>
+          </div>
+        </div>
+        <div class="agenda-form" id="agenda-form" style="display:none">
+          <input type="text" id="ev-title" placeholder="Título do evento" />
+          <input type="datetime-local" id="ev-datetime" />
+          <input type="text" id="ev-note" placeholder="Observação (opcional)" />
+          <button onclick="saveEvent()">Salvar Evento</button>
+          <button class="btn-cancel" onclick="hideAddEvent()">Cancelar</button>
+        </div>
+        <div class="agenda-list" id="agenda-list">
+          <p class="empty-state">Nenhum evento agendado.</p>
+        </div>
+      </section>
+
+      <!-- ══════════ CONFIG TAB ══════════ -->
+      <section class="tab" id="tab-config">
+        <div class="tab-header">
+          <h2>Configurações</h2>
+        </div>
+        <div class="config-panel">
+          <div class="config-group">
+            <label>Nome do usuário</label>
+            <input type="text" id="cfg-username" placeholder="Ex: Jefferson" />
+            <button onclick="saveConfig()">Salvar</button>
+          </div>
+          <div class="config-group">
+            <label>Velocidade da fala</label>
+            <input type="range" id="cfg-speed" min="0.5" max="2" step="0.1" value="1" oninput="document.getElementById('speed-val').textContent=this.value" />
+            <span id="speed-val">1</span>
+          </div>
+          <div class="config-group">
+            <label>Volume da fala</label>
+            <input type="range" id="cfg-volume" min="0" max="1" step="0.05" value="0.9" oninput="document.getElementById('vol-val').textContent=this.value" />
+            <span id="vol-val">0.9</span>
+          </div>
+          <div class="config-group toggle-group">
+            <label>Fala automática da IA</label>
+            <div class="toggle" id="toggle-speak" onclick="toggleSpeakMode()" title="Fala automática">
+              <div class="toggle-inner"></div>
+            </div>
+          </div>
+          <div class="config-group toggle-group">
+            <label>Escuta contínua</label>
+            <div class="toggle" id="toggle-listen" onclick="toggleContinuousListen()" title="Escuta contínua">
+              <div class="toggle-inner"></div>
+            </div>
+          </div>
+          <div class="config-group">
+            <label>Histórico salvo</label>
+            <button onclick="exportChat()">Exportar Chat</button>
+            <button class="btn-danger" onclick="clearAll()">Limpar Tudo</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
   </div>
+</div>
 
-  <script src="script.js"></script>
+<!-- NOTIFICATION AREA -->
+<div id="notif-area"></div>
 
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Firebase -->
+<script type="module" src="script.js"></script>
 </body>
 </html>
