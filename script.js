@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, push, remove, onValue }
+import { getDatabase, ref, set, get, push }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // ── Firebase ──
@@ -14,8 +14,7 @@ const firebaseConfig = {
   projectId: "nucisz",
   storageBucket: "nucisz.firebasestorage.app",
   messagingSenderId: "90824519141",
-  appId: "1:90824519141:web:8ec5d6686c07cbbf94930c",
-  measurementId: "G-BZ4S7Q3NM2"
+  appId: "1:90824519141:web:8ec5d6686c07cbbf94930c"
 };
 const fbApp = initializeApp(firebaseConfig);
 const db = getDatabase(fbApp);
@@ -24,15 +23,18 @@ const db = getDatabase(fbApp);
 const GEMINI_KEY = "AIzaSyCrsW6iJmm_qoGlg58hO5d45au8Fcim5x8";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
 
-// ── Meteoblue ──
-const WEATHER_KEY = "xqj042lJFAHcsK1U";
+// ── Coordenadas fixas — Água Branca, PI, Brasil ──
+// (GPS do navegador pega torre de celular próxima, não endereço exato)
+const DEFAULT_LAT = -6.6842;
+const DEFAULT_LON = -42.3878;
 
 // ── State ──
 let map = null;
-let userLat = null, userLon = null;
-let memory = {}; // { key: { value, timestamp } }
-let chatHistory = []; // [{ role, text, timestamp }]
-let agenda = []; // [{ id, title, datetime, note }]
+let userLat = DEFAULT_LAT;
+let userLon = DEFAULT_LON;
+let memory = {};
+let chatHistory = [];
+let agenda = [];
 let isListening = false;
 let recognition = null;
 let autoSpeak = true;
@@ -40,6 +42,33 @@ let continuousListen = false;
 let speechSynth = window.speechSynthesis;
 let userName = "Jefferson";
 let agendaCheckInterval = null;
+let mapMarker = null;
+
+// ════════════════════════════════
+//  FIX LEAFLET MARKER ICONS
+//  (unpkg storage blocked pelo Edge/Firefox tracking prevention)
+// ════════════════════════════════
+function fixLeafletIcons() {
+  // SVG inline — sem dependência de CDN externo
+  const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">
+    <path fill="#00d4ff" stroke="#007a99" stroke-width="1.5"
+      d="M12.5 0C5.6 0 0 5.6 0 12.5c0 9.4 12.5 28.5 12.5 28.5S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z"/>
+    <circle cx="12.5" cy="12.5" r="5" fill="white" opacity="0.9"/>
+  </svg>`;
+
+  const iconUrl = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(iconSvg);
+
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconUrl: iconUrl,
+    iconRetinaUrl: iconUrl,
+    shadowUrl: "",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [0, 0]
+  });
+}
 
 // ════════════════════════════════
 //  BOOT
@@ -68,10 +97,10 @@ async function boot() {
   await sleep(800);
   document.getElementById("app").classList.remove("hidden");
 
-  // Init everything
   await loadAllData();
   initClock();
   initSpeech();
+  fixLeafletIcons();
   initMap();
   detectLocation();
   startAgendaChecker();
@@ -79,10 +108,9 @@ async function boot() {
   renderAgenda();
   loadConfig();
 
-  // Welcome message
   await sleep(600);
   const user = memory["nome_usuario"]?.value || userName;
-  addAIMessage(`Sistema online, ${user}. Sou Sexta-Feira, sua assistente IA. Como posso ajudar?`);
+  addAIMessage(`Sistema online, ${user}. Sou Sexta-Feira, sua assistente IA pessoal. Como posso ajudar?`);
 }
 
 // ════════════════════════════════
@@ -90,36 +118,33 @@ async function boot() {
 // ════════════════════════════════
 async function loadAllData() {
   try {
-    // Memory
     const memSnap = await get(ref(db, "memory"));
     if (memSnap.exists()) memory = memSnap.val() || {};
 
-    // Chat history
     const chatSnap = await get(ref(db, "chatHistory"));
     if (chatSnap.exists()) {
       chatHistory = Object.values(chatSnap.val() || {});
       chatHistory.sort((a, b) => a.timestamp - b.timestamp);
-      // Render last 30 messages
       chatHistory.slice(-30).forEach(m => {
-        if (m.role === "user") addUserBubble(m.text, m.timestamp, false);
-        else addAIBubble(m.text, m.timestamp, false);
+        if (m.role === "user") renderUserBubble(m.text, m.timestamp);
+        else renderAIBubble(m.text, m.timestamp);
       });
     }
 
-    // Agenda
     const agendaSnap = await get(ref(db, "agenda"));
     if (agendaSnap.exists()) {
       agenda = Object.entries(agendaSnap.val() || {}).map(([id, v]) => ({ id, ...v }));
       agenda.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
     }
 
-    // Config
     const cfgSnap = await get(ref(db, "config"));
     if (cfgSnap.exists()) {
       const cfg = cfgSnap.val();
       userName = cfg.userName || "Jefferson";
       autoSpeak = cfg.autoSpeak !== false;
       continuousListen = cfg.continuousListen || false;
+      if (cfg.userLat) userLat = cfg.userLat;
+      if (cfg.userLon) userLon = cfg.userLon;
     }
 
     notify("✅", "Memória carregada", "cyan");
@@ -151,9 +176,7 @@ async function saveMemoryToFB() {
 async function saveChatToFB(role, text) {
   const entry = { role, text, timestamp: Date.now() };
   chatHistory.push(entry);
-  try {
-    await push(ref(db, "chatHistory"), entry);
-  } catch (e) {}
+  try { await push(ref(db, "chatHistory"), entry); } catch (e) {}
 }
 
 async function saveAgendaToFB() {
@@ -169,7 +192,10 @@ async function saveAgendaToFB() {
 
 async function saveConfigToFB() {
   try {
-    await set(ref(db, "config"), { userName, autoSpeak, continuousListen });
+    await set(ref(db, "config"), {
+      userName, autoSpeak, continuousListen,
+      userLat, userLon
+    });
   } catch (e) {}
 }
 
@@ -183,9 +209,8 @@ function initClock() {
     const m = String(now.getMinutes()).padStart(2, "0");
     const s = String(now.getSeconds()).padStart(2, "0");
     document.getElementById("clock-time").textContent = `${h}:${m}:${s}`;
-
-    const days = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-    const months = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+    const days = ["DOM","SEG","TER","QUA","QUI","SEX","SÁB"];
+    const months = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
     document.getElementById("clock-date").textContent =
       `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
   }
@@ -201,7 +226,6 @@ function switchTab(name) {
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
   document.getElementById(`tab-${name}`).classList.add("active");
   document.querySelector(`[data-tab="${name}"]`).classList.add("active");
-
   if (name === "map" && map) setTimeout(() => map.invalidateSize(), 100);
   if (name === "weather") fetchWeather();
   if (name === "memory") renderMemory();
@@ -210,16 +234,14 @@ function switchTab(name) {
 window.switchTab = switchTab;
 
 // ════════════════════════════════
-//  CHAT
+//  CHAT — RENDER
 // ════════════════════════════════
-function addUserBubble(text, ts, save = true) {
+function renderUserBubble(text, ts) {
   const area = document.getElementById("chat-area");
   const welcome = area.querySelector(".chat-welcome");
   if (welcome) welcome.remove();
-
   const time = ts ? new Date(ts) : new Date();
   const timeStr = `${String(time.getHours()).padStart(2,"0")}:${String(time.getMinutes()).padStart(2,"0")}`;
-
   const msg = document.createElement("div");
   msg.className = "msg user";
   msg.innerHTML = `
@@ -230,14 +252,12 @@ function addUserBubble(text, ts, save = true) {
     </div>`;
   area.appendChild(msg);
   area.scrollTop = area.scrollHeight;
-  if (save) saveChatToFB("user", text);
 }
 
-function addAIBubble(text, ts, save = true) {
+function renderAIBubble(text, ts, animate = false) {
   const area = document.getElementById("chat-area");
   const time = ts ? new Date(ts) : new Date();
   const timeStr = `${String(time.getHours()).padStart(2,"0")}:${String(time.getMinutes()).padStart(2,"0")}`;
-
   const msg = document.createElement("div");
   msg.className = "msg ai";
   msg.innerHTML = `
@@ -248,16 +268,22 @@ function addAIBubble(text, ts, save = true) {
     </div>`;
   area.appendChild(msg);
   area.scrollTop = area.scrollHeight;
-
   const bubble = msg.querySelector(".msg-bubble");
-  typeText(bubble, text, 18, () => {
-    area.scrollTop = area.scrollHeight;
-    if (save) saveChatToFB("ai", text);
-  });
+  if (animate) {
+    typeText(bubble, text, 16, () => { area.scrollTop = area.scrollHeight; });
+  } else {
+    bubble.innerHTML = formatText(text);
+  }
+}
+
+function addUserMessage(text) {
+  renderUserBubble(text, null);
+  saveChatToFB("user", text);
 }
 
 function addAIMessage(text) {
-  addAIBubble(text, null, true);
+  renderAIBubble(text, null, true);
+  saveChatToFB("ai", text);
   if (autoSpeak) speak(text);
 }
 
@@ -284,6 +310,9 @@ function removeTypingIndicator() {
   document.getElementById("ind-thinking").style.display = "none";
 }
 
+// ════════════════════════════════
+//  SEND MESSAGE
+// ════════════════════════════════
 async function sendMessage() {
   const input = document.getElementById("user-input");
   const text = input.value.trim();
@@ -291,58 +320,70 @@ async function sendMessage() {
   input.value = "";
   autoResize(input);
 
-  addUserBubble(text, null, true);
+  addUserMessage(text);
 
-  // Check for memory commands first
+  // Local command detection first (memory / agenda)
   const memResult = detectMemoryCommand(text);
-  if (memResult) {
-    addAIMessage(memResult);
-    return;
-  }
+  if (memResult) { addAIMessage(memResult); return; }
 
-  // Agenda commands
   const agendaResult = detectAgendaCommand(text);
-  if (agendaResult) {
-    addAIMessage(agendaResult);
-    return;
-  }
+  if (agendaResult) { addAIMessage(agendaResult); return; }
 
-  // Send to Gemini
+  // Gemini with retry on 429
   showTypingIndicator();
   try {
-    const reply = await askGemini(text);
+    const reply = await askGeminiWithRetry(text);
     removeTypingIndicator();
     addAIMessage(reply);
   } catch (e) {
     removeTypingIndicator();
-    addAIMessage("Erro ao conectar com o servidor. Verifique sua conexão.");
+    addAIMessage("Não consegui me conectar agora. Tente novamente em instantes.");
   }
 }
 window.sendMessage = sendMessage;
 
-// ── Gemini API ──
+// ── Gemini with retry ──
+async function askGeminiWithRetry(text, retries = 3) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await askGemini(text);
+    } catch (e) {
+      const is429 = e.message.includes("429");
+      if (is429 && attempt < retries - 1) {
+        // Wait 2s, 4s, 8s before retry
+        await sleep(2000 * Math.pow(2, attempt));
+        continue;
+      }
+      throw e;
+    }
+  }
+}
+
 async function askGemini(userText) {
   const memContext = buildMemoryContext();
-  const recentHistory = chatHistory.slice(-20).map(m => ({
+  const recentHistory = chatHistory.slice(-16).map(m => ({
     role: m.role === "ai" ? "model" : "user",
     parts: [{ text: m.text }]
   }));
 
-  const systemPrompt = `Você é Sexta-Feira, uma assistente IA pessoal futurista, inteligente e sempre disponível. 
-Você age como o JARVIS do Tony Stark — eficiente, direta, profissional, mas também calorosa e próxima.
-Nome do usuário: ${memory["nome_usuario"]?.value || userName}.
-Sempre responda em português do Brasil.
-Seja concisa mas completa. Use linguagem natural.
-Memória atual do usuário: ${memContext}
-Data/hora atual: ${new Date().toLocaleString("pt-BR")}`;
+  // Remove last entry (current message not saved yet) to avoid duplication
+  const historyForApi = recentHistory.slice(0, -1);
+
+  const systemPrompt = `Você é Sexta-Feira, assistente IA pessoal futurista e inteligente.
+Age como JARVIS — eficiente, direta, calorosa e próxima.
+Usuário: ${memory["nome_usuario"]?.value || userName}.
+Responda sempre em português do Brasil. Seja concisa e natural.
+Localização do usuário: Água Branca, Piauí, Brasil (Centro, R. Morais 146).
+Memória: ${memContext}
+Data/hora: ${new Date().toLocaleString("pt-BR")}`;
 
   const body = {
     system_instruction: { parts: [{ text: systemPrompt }] },
     contents: [
-      ...recentHistory.slice(-10),
+      ...historyForApi,
       { role: "user", parts: [{ text: userText }] }
     ],
-    generationConfig: { temperature: 0.8, maxOutputTokens: 800 }
+    generationConfig: { temperature: 0.8, maxOutputTokens: 600 }
   };
 
   const res = await fetch(GEMINI_URL, {
@@ -358,22 +399,23 @@ Data/hora atual: ${new Date().toLocaleString("pt-BR")}`;
 
 function buildMemoryContext() {
   const entries = Object.entries(memory);
-  if (!entries.length) return "Nenhuma memória salva ainda.";
+  if (!entries.length) return "Nenhuma.";
   return entries.map(([k, v]) => `${k}: ${v.value}`).join("; ");
 }
 
-// ── Memory detection ──
+// ════════════════════════════════
+//  MEMORY DETECTION
+// ════════════════════════════════
 function detectMemoryCommand(text) {
-  const low = text.toLowerCase();
-
-  // Salvar nome: "meu nome é X" / "me chame de X"
+  const low = text.toLowerCase().trim();
   let m;
-  if ((m = low.match(/meu nome (é|e) (.+)/)) || (m = low.match(/me chame de (.+)/))) {
-    const name = m[2] || m[1];
-    const cleaned = name.trim();
-    saveMemory("nome_usuario", cleaned);
-    userName = cleaned;
-    return `Perfeito! Vou te chamar de ${cleaned} daqui em diante.`;
+
+  // "meu nome é X" / "me chame de X"
+  if ((m = low.match(/meu nome (?:é|e) (.+)/)) || (m = low.match(/me chame de (.+)/))) {
+    const name = (m[1] || "").trim();
+    saveMemory("nome_usuario", name);
+    userName = name;
+    return `Perfeito! Vou te chamar de ${name} daqui em diante.`;
   }
 
   // "X agora se chama Y" / "X agora significa Y"
@@ -383,63 +425,58 @@ function detectMemoryCommand(text) {
   }
 
   // "aqui é X" / "esse lugar é X"
-  if ((m = text.match(/aqui (é|e) (.+)/i)) || (m = text.match(/esse lugar (é|e) (.+)/i))) {
-    const place = (m[2] || "").trim();
-    const loc = userLat ? `${place} (lat:${userLat.toFixed(4)},lon:${userLon.toFixed(4)})` : place;
-    saveMemory("local_atual", loc);
+  if ((m = text.match(/aqui (?:é|e) (.+)/i)) || (m = text.match(/esse lugar (?:é|e) (.+)/i))) {
+    const place = (m[1] || "").trim();
+    saveMemory("local_atual", place);
     return `Anotei! Este lugar agora é "${place}" na minha memória.`;
   }
 
-  // "lembre que X é Y" / "salve que X"
-  if ((m = text.match(/lembre que (.+?) (é|e|=) (.+)/i))) {
-    saveMemory(m[1].trim().toLowerCase(), m[3].trim());
-    return `Memória salva: "${m[1].trim()}" = "${m[3].trim()}".`;
+  // "lembre que X é Y"
+  if ((m = text.match(/lembre que (.+?) (?:é|e|=) (.+)/i))) {
+    saveMemory(m[1].trim().toLowerCase(), m[3]?.trim() || m[2]?.trim());
+    return `Memória salva: "${m[1].trim()}" → "${m[2]?.trim()}".`;
   }
 
   // "onde estamos?" / "qual o nome daqui?"
-  if (/onde est(amos|ou)|qual o nome (daqui|deste lugar|do lugar)/i.test(text)) {
+  if (/onde est(?:amos|ou)|qual o nome (?:daqui|deste lugar|do lugar)/i.test(text)) {
     const local = memory["local_atual"]?.value;
     if (local) return `De acordo com minha memória, estamos em: ${local}.`;
-    return "Ainda não registrei o nome deste lugar. Pode me dizer com 'aqui é [nome]'.";
+    return "Ainda não registrei este lugar. Me diga com 'aqui é [nome]'.";
   }
 
   // "o que você sabe sobre mim?"
-  if (/o que (você|vc) sabe (sobre mim|de mim)/i.test(text)) {
+  if (/o que (?:você|vc) sabe (?:sobre|de) mim/i.test(text)) {
     const entries = Object.entries(memory);
     if (!entries.length) return "Ainda não tenho muita informação sobre você. Me conte mais!";
-    const list = entries.map(([k, v]) => `• ${k}: ${v.value}`).join("\n");
-    return `Aqui está o que sei sobre você:\n${list}`;
+    return `O que sei sobre você:\n${entries.map(([k,v]) => `• ${k}: ${v.value}`).join("\n")}`;
   }
 
   return null;
 }
 
+// ════════════════════════════════
+//  AGENDA DETECTION
+// ════════════════════════════════
 function detectAgendaCommand(text) {
-  const low = text.toLowerCase();
   let m;
 
-  // "me lembre de X às Y" / "agende X para Y"
-  if ((m = text.match(/me lembre de (.+?) (às|as|para|em) (.+)/i)) ||
-      (m = text.match(/agende (.+?) (às|as|para|em) (.+)/i))) {
-    // Try to parse datetime from text
-    notify("📅", `Evento detectado. Use a aba Agenda para confirmar.`, "cyan");
+  if ((m = text.match(/me lembre de (.+?) (?:às|as|para|em) (.+)/i)) ||
+      (m = text.match(/agende (.+?) (?:às|as|para|em) (.+)/i))) {
     switchTab("agenda");
     showAddEvent();
     document.getElementById("ev-title").value = m[1];
-    return `Abri a agenda para você salvar "${m[1]}". Complete o horário e confirme!`;
+    return `Abri a agenda. Complete o horário e confirme o evento "${m[1]}".`;
   }
 
-  // "quais meus compromissos?" / "minha agenda"
-  if (/minha agenda|meus compromissos|próximos eventos|o que tenho/i.test(low)) {
-    if (!agenda.length) return "Sua agenda está vazia. Posso adicionar um evento pra você!";
+  if (/minha agenda|meus compromissos|próximos eventos|o que tenho/i.test(text)) {
+    if (!agenda.length) return "Sua agenda está vazia. Quer adicionar um evento?";
     const now = new Date();
     const upcoming = agenda.filter(e => new Date(e.datetime) >= now).slice(0, 5);
-    if (!upcoming.length) return "Não há eventos futuros na agenda.";
-    const list = upcoming.map(e => {
+    if (!upcoming.length) return "Não há eventos futuros agendados.";
+    return `Seus próximos eventos:\n${upcoming.map(e => {
       const d = new Date(e.datetime);
       return `• ${e.title} — ${d.toLocaleString("pt-BR")}`;
-    }).join("\n");
-    return `Seus próximos eventos:\n${list}`;
+    }).join("\n")}`;
   }
 
   return null;
@@ -476,12 +513,10 @@ function renderMemory(filter = "") {
   const entries = Object.entries(memory).filter(([k, v]) =>
     !filter || k.includes(filter.toLowerCase()) || v.value.toLowerCase().includes(filter.toLowerCase())
   );
-
   if (!entries.length) {
     list.innerHTML = `<p class="empty-state">Nenhuma memória encontrada.</p>`;
     return;
   }
-
   list.innerHTML = entries.map(([k, v]) => {
     const time = v.timestamp ? new Date(v.timestamp).toLocaleDateString("pt-BR") : "";
     return `<div class="memory-item">
@@ -512,7 +547,6 @@ window.clearMemory = clearMemory;
 // ════════════════════════════════
 function showAddEvent() {
   document.getElementById("agenda-form").style.display = "flex";
-  // Set default datetime to now + 1 hour
   const d = new Date(Date.now() + 3600000);
   const local = new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   document.getElementById("ev-datetime").value = local;
@@ -526,12 +560,10 @@ async function saveEvent() {
   const datetime = document.getElementById("ev-datetime").value;
   const note = document.getElementById("ev-note").value.trim();
   if (!title || !datetime) { notify("⚠️", "Título e horário obrigatórios", "warn"); return; }
-
   const id = `ev_${Date.now()}`;
   agenda.push({ id, title, datetime, note });
   agenda.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
   await saveAgendaToFB();
-
   document.getElementById("ev-title").value = "";
   document.getElementById("ev-note").value = "";
   hideAddEvent();
@@ -553,18 +585,15 @@ function renderAgenda() {
     list.innerHTML = `<p class="empty-state">Nenhum evento agendado.</p>`;
     return;
   }
-
   const now = new Date();
+  const months = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
   list.innerHTML = agenda.map(e => {
     const d = new Date(e.datetime);
     const past = d < now;
     const day = String(d.getDate()).padStart(2, "0");
-    const months = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
     const month = months[d.getMonth()];
     const hr = `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-    const cls = past ? "overdue" : "upcoming";
-
-    return `<div class="agenda-item ${cls}">
+    return `<div class="agenda-item ${past ? "overdue" : "upcoming"}">
       <div class="agenda-time-block">
         <div class="agenda-day">${day}</div>
         <div class="agenda-month">${month}</div>
@@ -580,7 +609,6 @@ function renderAgenda() {
 }
 window.renderAgenda = renderAgenda;
 
-// ── Agenda Checker ──
 function startAgendaChecker() {
   if (agendaCheckInterval) clearInterval(agendaCheckInterval);
   agendaCheckInterval = setInterval(() => {
@@ -588,7 +616,6 @@ function startAgendaChecker() {
     agenda.forEach(e => {
       const d = new Date(e.datetime);
       const diff = d - now;
-      // Notify 5 min before
       if (diff > 0 && diff < 5 * 60 * 1000) {
         const key = `notified_${e.id}`;
         if (!sessionStorage.getItem(key)) {
@@ -597,7 +624,6 @@ function startAgendaChecker() {
           addAIMessage(`⏰ Atenção! Seu evento "${e.title}" começa em 5 minutos!`);
         }
       }
-      // Notify at time
       if (diff > -60000 && diff <= 0) {
         const key = `fired_${e.id}`;
         if (!sessionStorage.getItem(key)) {
@@ -614,11 +640,7 @@ function startAgendaChecker() {
 //  VOICE
 // ════════════════════════════════
 function initSpeech() {
-  if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) {
-    console.warn("SpeechRecognition not supported");
-    return;
-  }
-
+  if (!("SpeechRecognition" in window) && !("webkitSpeechRecognition" in window)) return;
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
   recognition.lang = "pt-BR";
@@ -630,23 +652,19 @@ function initSpeech() {
     document.getElementById("mic-btn").classList.add("listening");
     document.getElementById("ind-listening").style.display = "flex";
   };
-
   recognition.onend = () => {
     isListening = false;
     document.getElementById("mic-btn").classList.remove("listening");
     document.getElementById("ind-listening").style.display = "none";
     if (continuousListen && document.getElementById("toggle-listen").classList.contains("on")) {
-      setTimeout(() => { try { recognition.start(); } catch(e){} }, 500);
+      setTimeout(() => { try { recognition.start(); } catch(e){} }, 800);
     }
   };
-
-  recognition.onerror = (e) => {
-    console.error("Speech error:", e.error);
+  recognition.onerror = () => {
     isListening = false;
     document.getElementById("mic-btn").classList.remove("listening");
     document.getElementById("ind-listening").style.display = "none";
   };
-
   recognition.onresult = (e) => {
     const transcript = e.results[0][0].transcript;
     document.getElementById("user-input").value = transcript;
@@ -656,29 +674,22 @@ function initSpeech() {
 
 function toggleListen() {
   if (!recognition) { notify("⚠️", "Voz não suportada neste navegador", "warn"); return; }
-  if (isListening) {
-    recognition.stop();
-  } else {
-    try { recognition.start(); } catch(e) {}
-  }
+  if (isListening) { recognition.stop(); }
+  else { try { recognition.start(); } catch(e) {} }
 }
 window.toggleListen = toggleListen;
 
 function speak(text) {
   if (!speechSynth) return;
   speechSynth.cancel();
-  const clean = text.replace(/[*_#`~]/g, "").substring(0, 300);
+  const clean = text.replace(/[*_#`~•→]/g, "").substring(0, 280);
   const utt = new SpeechSynthesisUtterance(clean);
   utt.lang = "pt-BR";
   utt.rate = parseFloat(document.getElementById("cfg-speed")?.value || 1);
   utt.volume = parseFloat(document.getElementById("cfg-volume")?.value || 0.9);
-
-  // Try to pick a Portuguese voice
   const voices = speechSynth.getVoices();
-  const ptVoice = voices.find(v => v.lang.startsWith("pt")) ||
-                  voices.find(v => v.lang.startsWith("en"));
+  const ptVoice = voices.find(v => v.lang.startsWith("pt")) || voices.find(v => v.lang.startsWith("en"));
   if (ptVoice) utt.voice = ptVoice;
-
   speechSynth.speak(utt);
 }
 window.speak = speak;
@@ -688,153 +699,150 @@ window.speak = speak;
 // ════════════════════════════════
 function initMap() {
   if (map) return;
-  map = L.map("map", { zoomControl: true }).setView([-10.9, -37.0], 5);
+  map = L.map("map", { zoomControl: true }).setView([userLat, userLon], 13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap",
     maxZoom: 19
   }).addTo(map);
+
+  // Place marker at saved/default location
+  mapMarker = L.marker([userLat, userLon]).addTo(map)
+    .bindPopup(`📍 ${memory["cidade"]?.value || "Água Branca, PI"}`)
+    .openPopup();
+
+  document.getElementById("map-info").textContent =
+    `📍 ${memory["cidade"]?.value || "Água Branca, PI, Brasil"} · Lat ${userLat.toFixed(4)} · Lon ${userLon.toFixed(4)}`;
+}
+
+function updateMapMarker(lat, lon, label) {
+  if (!map) return;
+  if (mapMarker) map.removeLayer(mapMarker);
+  mapMarker = L.marker([lat, lon]).addTo(map).bindPopup(label).openPopup();
+  map.setView([lat, lon], 15);
+  document.getElementById("map-info").textContent = `📍 ${label} · Lat ${lat.toFixed(4)} · Lon ${lon.toFixed(4)}`;
 }
 
 function locateUser() {
   if (!navigator.geolocation) { notify("⚠️", "Geolocalização não suportada", "warn"); return; }
+  notify("📡", "Buscando GPS...", "cyan", 3000);
   navigator.geolocation.getCurrentPosition(pos => {
     userLat = pos.coords.latitude;
     userLon = pos.coords.longitude;
     switchTab("map");
-    if (map) {
-      map.setView([userLat, userLon], 15);
-      L.marker([userLat, userLon])
-        .addTo(map)
-        .bindPopup("📍 Você está aqui")
-        .openPopup();
-    }
-    document.getElementById("map-info").textContent =
-      `📍 Lat: ${userLat.toFixed(5)} · Lon: ${userLon.toFixed(5)}`;
+    updateMapMarker(userLat, userLon, "📍 Você está aqui");
+    saveConfigToFB();
+    fetchWeather();
   }, err => {
-    notify("⚠️", "Não foi possível obter localização", "warn");
-  });
+    notify("⚠️", "GPS indisponível — usando localização salva", "warn");
+  }, { timeout: 8000 });
 }
 window.locateUser = locateUser;
 
 function detectLocation() {
-  if (!navigator.geolocation) return;
+  // Try GPS but don't block — use default coords if it fails/takes too long
+  if (!navigator.geolocation) { fetchWeather(); return; }
   navigator.geolocation.getCurrentPosition(pos => {
     userLat = pos.coords.latitude;
     userLon = pos.coords.longitude;
-    if (map) {
-      map.setView([userLat, userLon], 13);
-      L.marker([userLat, userLon]).addTo(map).bindPopup("📍 Você");
-    }
-    document.getElementById("map-info").textContent =
-      `📍 Lat: ${userLat.toFixed(5)} · Lon: ${userLon.toFixed(5)}`;
+    if (map) updateMapMarker(userLat, userLon, "📍 Você");
     fetchWeather();
+    saveConfigToFB();
   }, () => {
-    // silent fail
-  });
+    // GPS failed — use saved/default location silently
+    fetchWeather();
+  }, { timeout: 6000 });
 }
 
 // ════════════════════════════════
-//  WEATHER (Meteoblue)
+//  WEATHER — Open-Meteo (gratuito, sem API key, sem CORS)
+//  Substitui Meteoblue que retornava 400 com essa URL
 // ════════════════════════════════
 async function fetchWeather() {
   const panel = document.getElementById("weather-panel");
-
-  if (!userLat || !userLon) {
-    panel.innerHTML = `<div class="weather-loading">Aguardando localização GPS para buscar clima...</div>`;
-    detectLocation();
-    return;
-  }
-
   panel.innerHTML = `<div class="weather-loading">🌐 Buscando clima...</div>`;
 
   try {
-    const url = `https://my.meteoblue.com/packages/basic-1h?apikey=${WEATHER_KEY}&lat=${userLat}&lon=${userLon}&format=json&temperature=C&windspeed=ms&forecast_days=3`;
+    // Open-Meteo: free, no key, no CORS issues
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${userLat}&longitude=${userLon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation,weather_code&timezone=America%2FSao_Paulo&wind_speed_unit=ms`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error("API error");
+    if (!res.ok) throw new Error("weather fetch failed");
     const data = await res.json();
+    const c = data.current;
 
-    const h = data.data_1h;
-    const now = new Date();
-    const idx = 0; // current hour approx
+    const temp = Math.round(c.temperature_2m);
+    const humidity = Math.round(c.relative_humidity_2m);
+    const wind = Math.round(c.wind_speed_10m);
+    const precip = (c.precipitation || 0).toFixed(1);
+    const code = c.weather_code || 0;
 
-    const temp = Math.round(h.temperature[idx]);
-    const wind = Math.round(h.windspeed[idx]);
-    const humidity = h.relativehumidity ? Math.round(h.relativehumidity[idx]) : "--";
-    const precipitation = h.precipitation ? h.precipitation[idx].toFixed(1) : "0";
-    const pictocode = h.pictocode ? h.pictocode[idx] : 1;
-
-    const icon = getWeatherIcon(pictocode);
-    const desc = getWeatherDesc(pictocode);
-
-    const city = memory["cidade"]?.value || `Lat ${userLat.toFixed(2)}, Lon ${userLon.toFixed(2)}`;
+    const icon = getWeatherIcon(code);
+    const desc = getWeatherDesc(code);
+    const city = memory["cidade"]?.value || "Água Branca, PI";
 
     panel.innerHTML = `
       <div class="weather-card">
         <div class="weather-icon">${icon}</div>
         <div class="weather-main">
-          <h3>${city.toUpperCase()}</h3>
+          <h3>${escapeHtml(city.toUpperCase())}</h3>
           <div class="weather-temp">${temp}°C</div>
           <div class="weather-desc">${desc}</div>
         </div>
       </div>
       <div class="weather-details">
         <div class="w-detail">
-          <div class="w-detail-label">Vento</div>
-          <div class="w-detail-val">${wind} m/s</div>
-        </div>
-        <div class="w-detail">
           <div class="w-detail-label">Umidade</div>
           <div class="w-detail-val">${humidity}%</div>
         </div>
         <div class="w-detail">
+          <div class="w-detail-label">Vento</div>
+          <div class="w-detail-val">${wind} m/s</div>
+        </div>
+        <div class="w-detail">
           <div class="w-detail-label">Chuva</div>
-          <div class="w-detail-val">${precipitation} mm</div>
+          <div class="w-detail-val">${precip} mm</div>
         </div>
       </div>`;
 
-    // Save city to memory if not set
+    // Save city if not set
     if (!memory["cidade"]) {
-      await reverseGeocode(userLat, userLon);
+      memory["cidade"] = { value: "Água Branca, PI", timestamp: Date.now() };
+      await saveMemoryToFB();
     }
 
   } catch (e) {
-    panel.innerHTML = `<div class="weather-loading">⚠️ Não foi possível carregar o clima. Tente novamente.</div>`;
+    panel.innerHTML = `<div class="weather-loading">⚠️ Não foi possível carregar o clima.</div>`;
     console.error("Weather error:", e);
   }
 }
 window.fetchWeather = fetchWeather;
 
-async function reverseGeocode(lat, lon) {
-  try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
-    const data = await res.json();
-    const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || "";
-    if (city) await saveMemory("cidade", city);
-  } catch (e) {}
-}
-
+// WMO Weather Codes (Open-Meteo uses WMO standard)
 function getWeatherIcon(code) {
-  if (code <= 2) return "☀️";
-  if (code <= 4) return "🌤️";
-  if (code <= 6) return "⛅";
-  if (code <= 8) return "☁️";
-  if (code <= 11) return "🌧️";
-  if (code <= 13) return "⛈️";
-  if (code <= 16) return "🌨️";
-  if (code <= 17) return "🌩️";
-  return "🌫️";
+  if (code === 0) return "☀️";
+  if (code <= 2) return "🌤️";
+  if (code <= 3) return "☁️";
+  if (code <= 49) return "🌫️";
+  if (code <= 57) return "🌦️";
+  if (code <= 67) return "🌧️";
+  if (code <= 77) return "❄️";
+  if (code <= 82) return "🌧️";
+  if (code <= 86) return "🌨️";
+  if (code <= 99) return "⛈️";
+  return "🌡️";
 }
 
 function getWeatherDesc(code) {
-  if (code <= 2) return "Céu limpo";
-  if (code <= 4) return "Poucas nuvens";
-  if (code <= 6) return "Parcialmente nublado";
-  if (code <= 8) return "Nublado";
-  if (code <= 11) return "Chuvoso";
-  if (code <= 13) return "Tempestade";
-  if (code <= 16) return "Neve";
-  if (code <= 17) return "Trovoada";
-  return "Neblina";
+  if (code === 0) return "Céu limpo";
+  if (code <= 2) return "Poucas nuvens";
+  if (code <= 3) return "Nublado";
+  if (code <= 49) return "Neblina/névoa";
+  if (code <= 57) return "Garoa";
+  if (code <= 67) return "Chuva";
+  if (code <= 77) return "Neve";
+  if (code <= 82) return "Pancadas de chuva";
+  if (code <= 86) return "Neve forte";
+  if (code <= 99) return "Tempestade";
+  return "Indisponível";
 }
 
 // ════════════════════════════════
@@ -849,6 +857,20 @@ function loadConfig() {
 async function saveConfig() {
   userName = document.getElementById("cfg-username").value.trim() || "Jefferson";
   await saveMemory("nome_usuario", userName);
+
+  // Save manual location if filled
+  const latIn = document.getElementById("cfg-lat")?.value.trim();
+  const lonIn = document.getElementById("cfg-lon")?.value.trim();
+  if (latIn && lonIn) {
+    const lat = parseFloat(latIn);
+    const lon = parseFloat(lonIn);
+    if (!isNaN(lat) && !isNaN(lon)) {
+      userLat = lat;
+      userLon = lon;
+      if (map) updateMapMarker(lat, lon, memory["cidade"]?.value || "Minha localização");
+    }
+  }
+
   await saveConfigToFB();
   notify("✅", "Configurações salvas", "green");
 }
@@ -889,10 +911,10 @@ async function clearChat() {
   document.getElementById("chat-area").innerHTML = `
     <div class="chat-welcome">
       <div class="welcome-orb"></div>
-      <p>Chat limpo. Pronto para conversar!</p>
+      <p>Chat limpo. Pronta para conversar!</p>
     </div>`;
   chatHistory = [];
-  try { await set(ref(db, "chatHistory"), null); } catch(e){}
+  try { await set(ref(db, "chatHistory"), null); } catch(e) {}
   notify("🗑️", "Chat limpo", "warn");
 }
 window.clearChat = clearChat;
@@ -943,9 +965,8 @@ function notify(icon, msg, type = "cyan", duration = 4000) {
     <button class="notif-close" onclick="this.closest('.notif').remove()">✕</button>`;
   area.appendChild(el);
 
-  // Browser notification if permitted
   if (Notification?.permission === "granted") {
-    new Notification("Sexta-Feira", { body: msg, icon: "/favicon.ico" });
+    try { new Notification("Sexta-Feira", { body: msg }); } catch(e) {}
   }
 
   setTimeout(() => {
@@ -955,7 +976,6 @@ function notify(icon, msg, type = "cyan", duration = 4000) {
 }
 window.notify = notify;
 
-// Request notification permission
 async function requestNotifPermission() {
   if ("Notification" in window && Notification.permission === "default") {
     await Notification.requestPermission();
@@ -972,29 +992,29 @@ function escapeHtml(s) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/\n/g, "<br>");
+    .replace(/"/g, "&quot;");
 }
 
-function typeText(el, text, speed = 18, onDone) {
-  // Process markdown-like formatting
-  const html = text
+function formatText(text) {
+  return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/\n/g, "<br>");
+    .replace(/\n/g, "<br>")
+    .replace(/•/g, "•");
+}
 
-  // Strip tags for typing effect, then set full HTML
+function typeText(el, text, speed = 16, onDone) {
+  const plain = text.replace(/\*\*?(.+?)\*\*?/g, "$1").replace(/\n/g, " ");
+  const chars = [...plain];
   let i = 0;
   el.textContent = "";
-  const plain = text.replace(/\*\*?(.+?)\*\*?/g, "$1");
-  const chars = [...plain];
 
   function type() {
     if (i < chars.length) {
       el.textContent += chars[i++];
-      setTimeout(type, speed + Math.random() * 10);
+      setTimeout(type, speed + Math.random() * 8);
     } else {
-      el.innerHTML = html;
+      el.innerHTML = formatText(text);
       if (onDone) onDone();
     }
   }
