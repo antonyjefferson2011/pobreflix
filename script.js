@@ -1,21 +1,21 @@
-// ==================== FILMES ====================
+// ==================== FILMES COM LINKS FUNCIONANDO ====================
 var FILMES = [
     {
         titulo: "Vingadores: Ultimato",
         capa: "https://image.tmdb.org/t/p/w500/qmDpIHrmpJINaRKAfWQfftjCwwi.jpg",
-        video: "https://drive.google.com/uc?export=download&id=1Cvvm54sMf_kjHDxemJwWVaHiHQ7c2Z_m",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
         categoria: "acao"
     },
     {
         titulo: "Vingadores: Guerra Infinita",
         capa: "https://image.tmdb.org/t/p/w500/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
-        video: "https://drive.google.com/uc?export=download&id=1wm0s1BavDUyGyS1YV20d67_8erC_h_WN",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
         categoria: "acao"
     },
     {
         titulo: "Vingadores: Era de Ultron",
         capa: "https://image.tmdb.org/t/p/w500/4ssDuvEDkSArGdy5sUaXJk4M2x4.jpg",
-        video: "https://drive.google.com/uc?export=download&id=1kP93UrE46X-AZvWBkBmutopudmKPJ7JY",
+        video: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFunflies.mp4",
         categoria: "acao"
     }
 ];
@@ -30,15 +30,10 @@ var closePlayer = document.getElementById('closePlayer');
 var errorMsg = document.getElementById('errorMsg');
 var retryBtn = document.getElementById('retryBtn');
 var movieCount = document.getElementById('movieCount');
-var addMovieBtn = document.getElementById('addMovieBtn');
-var addMovieModal = document.getElementById('addMovieModal');
-var closeAddMovie = document.getElementById('closeAddMovie');
-var addMovieForm = document.getElementById('addMovieForm');
 
 var currentCategory = 'all';
 var searchTerm = '';
 var allCards = [];
-var currentIndex = 0;
 var continueWatching = null;
 
 function loadSavedData() {
@@ -60,12 +55,6 @@ function saveProgress(filmeId, time) {
         localStorage.setItem('pobreflix_continue', JSON.stringify(data));
         continueWatching = data;
     } catch(e) {}
-}
-
-function escapeHtml(text) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(text));
-    return div.innerHTML;
 }
 
 function renderFilmes() {
@@ -92,7 +81,7 @@ function renderFilmes() {
         var isContinue = continueWatching && continueWatching.titulo === f.titulo;
         
         html += '<div class="filme-card" data-titulo="' + f.titulo + '" data-video="' + f.video + '">';
-        html += '<img class="filme-capa" src="' + f.capa + '" alt="' + f.titulo + '" loading="lazy" onerror="this.src=\'https://via.placeholder.com/300x450?text=Sem+Capa\'">';
+        html += '<img class="filme-capa" src="' + f.capa + '" alt="' + f.titulo + '">';
         if (isContinue) {
             html += '<span class="badge-continue">▶ CONTINUAR</span>';
         }
@@ -123,24 +112,23 @@ function openPlayer(titulo, videoUrl) {
     
     setTimeout(function() {
         videoPlayer.play().catch(function(e) {
-            console.log('Autoplay bloqueado - clique no play');
+            console.log('Clique no play para começar');
         });
-    }, 200);
+    }, 300);
     
     videoPlayer.removeEventListener('timeupdate', saveTimeUpdate);
     videoPlayer.addEventListener('timeupdate', saveTimeUpdate);
-    
-    for (var i = 0; i < FILMES.length; i++) {
-        if (FILMES[i].video === videoUrl) {
-            currentIndex = i;
-            break;
-        }
-    }
 }
 
 function saveTimeUpdate() {
     if (videoPlayer.currentTime > 5) {
-        saveProgress(currentIndex, videoPlayer.currentTime);
+        var titulo = videoTitle.textContent;
+        for (var i = 0; i < FILMES.length; i++) {
+            if (FILMES[i].titulo === titulo) {
+                saveProgress(i, videoPlayer.currentTime);
+                break;
+            }
+        }
     }
 }
 
@@ -201,50 +189,6 @@ document.addEventListener('keydown', function(e) {
 
 videoPlayer.addEventListener('error', handleVideoError);
 retryBtn.addEventListener('click', retryVideo);
-
-addMovieBtn.addEventListener('click', function() {
-    addMovieModal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-});
-
-closeAddMovie.addEventListener('click', function() {
-    addMovieModal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-});
-
-addMovieModal.addEventListener('click', function(e) {
-    if (e.target === this) {
-        addMovieModal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-});
-
-addMovieForm.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    var titulo = document.getElementById('movieTitle').value.trim();
-    var capa = document.getElementById('movieCapa').value.trim();
-    var video = document.getElementById('movieVideo').value.trim();
-    var categoria = document.getElementById('movieCategory').value;
-    
-    if (!titulo || !video) {
-        alert('Preencha pelo menos o título e o link do vídeo!');
-        return;
-    }
-    
-    FILMES.push({
-        titulo: titulo,
-        capa: capa || 'https://via.placeholder.com/300x450?text=Sem+Capa',
-        video: video,
-        categoria: categoria
-    });
-    
-    addMovieModal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    addMovieForm.reset();
-    renderFilmes();
-    alert('Filme "' + titulo + '" adicionado com sucesso!');
-});
 
 function init() {
     loadSavedData();
