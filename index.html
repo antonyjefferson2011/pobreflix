@@ -4,18 +4,262 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pobreflix - Vingadores</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ===== RESET ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 12px;
+            padding-bottom: 80px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            color: #e50914;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .movie-count {
+            background: #222;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        /* ===== BUSCA ===== */
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            color: #fff;
+            font-size: 16px;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #e50914;
+        }
+
+        /* ===== CATEGORIAS ===== */
+        .categories {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category {
+            background: #1a1a1a;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 2px solid transparent;
+        }
+
+        .category.active {
+            background: #e50914;
+            color: #fff;
+            border-color: #e50914;
+        }
+
+        /* ===== FILMES ===== */
+        .filmes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .filme-card {
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.15s;
+        }
+
+        .filme-card:active {
+            transform: scale(0.96);
+        }
+
+        .filme-card .filme-capa {
+            width: 100%;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+            display: block;
+            background: #1a1a1a;
+        }
+
+        .filme-card .filme-titulo {
+            padding: 8px 10px;
+            font-size: 13px;
+            text-align: center;
+            color: #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ===== PLAYER MODAL ===== */
+        .player-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+        }
+
+        .player-modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 100;
+            color: #fff;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+        }
+
+        .video-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            padding: 0;
+        }
+
+        #videoPlayer {
+            width: 100%;
+            height: auto;
+            max-height: 100vh;
+            background: #000;
+            display: block;
+        }
+
+        .video-info {
+            background: #111;
+            padding: 12px 16px;
+            text-align: center;
+        }
+
+        #videoTitle {
+            font-size: 16px;
+        }
+
+        .error-msg {
+            background: #e50914;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .error-msg p {
+            margin-bottom: 6px;
+        }
+
+        .retry-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .no-movies {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-size: 16px;
+        }
+
+        /* ===== RESPONSIVO ===== */
+        @media (max-width: 480px) {
+            .filmes-container {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+            .logo {
+                font-size: 18px;
+            }
+            .category {
+                font-size: 12px;
+                padding: 5px 12px;
+            }
+        }
+    </style>
 </head>
 <body>
+
+    <!-- ===== HEADER ===== -->
     <div class="header">
         <h1 class="logo">🎬 POBREFLIX</h1>
         <span class="movie-count" id="movieCount">0 filmes</span>
     </div>
 
+    <!-- ===== BUSCA ===== -->
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="🔍 Buscar filme..." class="search-input">
     </div>
 
+    <!-- ===== CATEGORIAS ===== -->
     <div class="categories">
         <div class="category active" data-cat="all">TODOS</div>
         <div class="category" data-cat="acao">AÇÃO</div>
@@ -24,9 +268,11 @@
         <div class="category" data-cat="ficcao">FICÇÃO</div>
     </div>
 
+    <!-- ===== LISTA DE FILMES ===== -->
     <div id="filmesContainer" class="filmes-container"></div>
 
-    <div id="playerModal" class="player-modal" style="display:none;">
+    <!-- ===== PLAYER MODAL ===== -->
+    <div id="playerModal" class="player-modal">
         <div class="modal-content">
             <div class="close-btn" id="closePlayer">✕</div>
             <div class="video-container">
@@ -36,7 +282,7 @@
             </div>
             <div class="video-info">
                 <h3 id="videoTitle"></h3>
-                <div class="error-msg" id="errorMsg" style="display:none;">
+                <div class="error-msg" id="errorMsg">
                     <p>❌ Erro ao carregar o vídeo!</p>
                     <button id="retryBtn" class="retry-btn">🔄 TENTAR NOVAMENTE</button>
                 </div>
@@ -44,27 +290,177 @@
         </div>
     </div>
 
-    <button id="addMovieBtn" class="add-movie-btn" title="Adicionar filme">+</button>
+    <script>
+        // ================================================================
+        // ===== LISTA DE FILMES (COLOQUE SEUS FILMES AQUI) =====
+        // ================================================================
+        var FILMES = [{
+            titulo: "Vingadores: Ultimato",
+            capa: "https://image.tmdb.org/t/p/w500/qmDpIHrmpJINaRKAfWQfftjCwwi.jpg",
+            video: "https://drive.google.com/uc?export=download&id=1Cvvm54sMf_kjHDxemJwWVaHiHQ7c2Z_m",
+            categoria: "acao"
+        }, {
+            titulo: "Vingadores: Guerra Infinita",
+            capa: "https://image.tmdb.org/t/p/w500/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+            video: "https://drive.google.com/uc?export=download&id=1wm0s1BavDUyGyS1YV20d67_8erC_h_WN",
+            categoria: "acao"
+        }, {
+            titulo: "Vingadores: Era de Ultron",
+            capa: "https://image.tmdb.org/t/p/w500/4ssDuvEDkSArGdy5sUaXJk4M2x4.jpg",
+            video: "https://drive.google.com/uc?export=download&id=1kP93UrE46X-AZvWBkBmutopudmKPJ7JY",
+            categoria: "acao"
+        }];
 
-    <div id="addMovieModal" class="add-movie-modal" style="display:none;">
-        <div class="add-movie-content">
-            <div class="close-btn" id="closeAddMovie">✕</div>
-            <h2>Adicionar Filme</h2>
-            <form id="addMovieForm">
-                <input type="text" id="movieTitle" placeholder="Título do filme" required>
-                <input type="text" id="movieCapa" placeholder="URL da capa (imagem)">
-                <input type="text" id="movieVideo" placeholder="URL do vídeo" required>
-                <select id="movieCategory">
-                    <option value="acao">Ação</option>
-                    <option value="comedia">Comédia</option>
-                    <option value="drama">Drama</option>
-                    <option value="ficcao">Ficção</option>
-                </select>
-                <button type="submit" class="submit-btn">ADICIONAR FILME</button>
-            </form>
-        </div>
-    </div>
+        // ================================================================
+        // ===== CÓDIGO PRINCIPAL =====
+        // ================================================================
 
-    <script src="script.js"></script>
+        var filmesContainer = document.getElementById('filmesContainer');
+        var searchInput = document.getElementById('searchInput');
+        var playerModal = document.getElementById('playerModal');
+        var videoPlayer = document.getElementById('videoPlayer');
+        var videoTitle = document.getElementById('videoTitle');
+        var closePlayer = document.getElementById('closePlayer');
+        var errorMsg = document.getElementById('errorMsg');
+        var retryBtn = document.getElementById('retryBtn');
+        var movieCount = document.getElementById('movieCount');
+
+        var currentCategory = 'all';
+        var searchTerm = '';
+        var allCards = [];
+
+        // ===== RENDERIZAR FILMES =====
+        function renderFilmes() {
+            var filtered = [];
+            for (var i = 0; i < FILMES.length; i++) {
+                var filme = FILMES[i];
+                var matchCat = currentCategory === 'all' || filme.categoria === currentCategory;
+                var matchSearch = searchTerm === '' || filme.titulo.toLowerCase().indexOf(searchTerm.toLowerCase()) !== -1;
+                if (matchCat && matchSearch) {
+                    filtered.push(filme);
+                }
+            }
+
+            movieCount.textContent = filtered.length + ' filmes';
+
+            if (filtered.length === 0) {
+                filmesContainer.innerHTML = '<div class="no-movies">🎬 Nenhum filme encontrado</div>';
+                return;
+            }
+
+            var html = '';
+            for (var j = 0; j < filtered.length; j++) {
+                var f = filtered[j];
+                html += '<div class="filme-card" data-titulo="' + f.titulo + '" data-video="' + f.video + '">';
+                html += '<img class="filme-capa" src="' + f.capa + '" alt="' + f.titulo + '" loading="lazy">';
+                html += '<div class="filme-titulo">' + f.titulo + '</div>';
+                html += '</div>';
+            }
+
+            filmesContainer.innerHTML = html;
+
+            allCards = document.querySelectorAll('.filme-card');
+            for (var k = 0; k < allCards.length; k++) {
+                (function(card) {
+                    card.addEventListener('click', function() {
+                        var titulo = card.getAttribute('data-titulo');
+                        var video = card.getAttribute('data-video');
+                        openPlayer(titulo, video);
+                    });
+                })(allCards[k]);
+            }
+        }
+
+        // ===== ABRIR PLAYER =====
+        function openPlayer(titulo, videoUrl) {
+            videoTitle.textContent = titulo;
+            videoPlayer.src = videoUrl;
+            playerModal.classList.add('active');
+            errorMsg.style.display = 'none';
+            document.body.style.overflow = 'hidden';
+
+            setTimeout(function() {
+                videoPlayer.play().catch(function(e) {
+                    console.log('Clique no play para começar');
+                });
+            }, 300);
+        }
+
+        // ===== FECHAR PLAYER =====
+        function closePlayerModal() {
+            videoPlayer.pause();
+            videoPlayer.src = '';
+            playerModal.classList.remove('active');
+            errorMsg.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // ===== ERRO NO VÍDEO =====
+        function handleVideoError() {
+            errorMsg.style.display = 'block';
+        }
+
+        // ===== TENTAR NOVAMENTE =====
+        function retryVideo() {
+            errorMsg.style.display = 'none';
+            videoPlayer.load();
+            setTimeout(function() {
+                videoPlayer.play().catch(function(e) {
+                    errorMsg.style.display = 'block';
+                });
+            }, 300);
+        }
+
+        // ================================================================
+        // ===== EVENTOS =====
+        // ================================================================
+
+        // Busca
+        var searchTimeout;
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function() {
+                searchTerm = e.target.value;
+                renderFilmes();
+            }, 300);
+        });
+
+        // Categorias
+        var categories = document.querySelectorAll('.category');
+        for (var i = 0; i < categories.length; i++) {
+            (function(cat) {
+                cat.addEventListener('click', function() {
+                    var selected = this.getAttribute('data-cat');
+                    for (var j = 0; j < categories.length; j++) {
+                        categories[j].classList.remove('active');
+                    }
+                    this.classList.add('active');
+                    currentCategory = selected;
+                    renderFilmes();
+                });
+            })(categories[i]);
+        }
+
+        // Fechar player
+        closePlayer.addEventListener('click', closePlayerModal);
+
+        // Tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && playerModal.classList.contains('active')) {
+                closePlayerModal();
+            }
+        });
+
+        // Eventos do vídeo
+        videoPlayer.addEventListener('error', handleVideoError);
+        retryBtn.addEventListener('click', retryVideo);
+
+        // ===== INICIALIZAR =====
+        renderFilmes();
+
+        console.log('🎬 Pobreflix carregado!');
+        console.log('📽️ ' + FILMES.length + ' filmes disponíveis');
+    </script>
+
 </body>
 </html>
