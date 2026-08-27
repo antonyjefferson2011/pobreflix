@@ -1,679 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Sexta-feira • Assistente Pessoal</title>
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- Fontes & Ícones -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0b0f17;
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-      color: #e0f0ff;
-    }
-
-    /* SIDEBAR LATERAL */
-    .sidebar {
-      width: 260px;
-      background: rgba(12, 20, 30, 0.9);
-      backdrop-filter: blur(20px);
-      border-right: 1px solid rgba(0, 255, 255, 0.15);
-      display: flex;
-      flex-direction: column;
-      padding: 1.5rem 1rem;
-      box-shadow: 4px 0 30px rgba(0, 0, 0, 0.6);
-      z-index: 10;
-    }
-
-    .logo-area {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 2.5rem;
-    }
-
-    .logo-icon {
-      font-size: 2rem;
-      filter: drop-shadow(0 0 10px #00e5ff);
-    }
-
-    .logo-text {
-      font-weight: 600;
-      font-size: 1.4rem;
-      letter-spacing: 1px;
-      background: linear-gradient(135deg, #a0f0ff, #00b7ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .nav-tabs {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      flex: 1;
-    }
-
-    .tab-btn {
-      background: transparent;
-      border: none;
-      color: #8a9bb5;
-      padding: 0.9rem 1rem;
-      border-radius: 12px;
-      font-size: 0.95rem;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      text-align: left;
-    }
-
-    .tab-btn i {
-      font-size: 1.2rem;
-      width: 24px;
-      text-align: center;
-    }
-
-    .tab-btn:hover {
-      background: rgba(0, 255, 255, 0.08);
-      color: #c0f0ff;
-    }
-
-    .tab-btn.active {
-      background: rgba(0, 180, 255, 0.15);
-      color: #00e5ff;
-      box-shadow: 0 0 15px rgba(0, 180, 255, 0.3);
-      border: 1px solid rgba(0, 255, 255, 0.4);
-    }
-
-    .clock-widget {
-      margin-top: auto;
-      padding: 1rem;
-      background: rgba(0, 20, 40, 0.5);
-      border-radius: 16px;
-      border: 1px solid rgba(0, 255, 255, 0.2);
-      text-align: center;
-    }
-
-    #live-clock {
-      font-size: 1.8rem;
-      font-weight: 600;
-      color: #00f2ff;
-      text-shadow: 0 0 12px #00a6ff;
-    }
-
-    .date-string {
-      font-size: 0.8rem;
-      color: #7f95b5;
-    }
-
-    /* MAIN CONTENT */
-    .main-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: radial-gradient(circle at 20% 20%, #131e2c, #070b12);
-      position: relative;
-    }
-
-    .view {
-      display: none;
-      flex: 1;
-      padding: 1.5rem;
-      overflow-y: auto;
-    }
-
-    .view.active-view {
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* CHAT */
-    .chat-container {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      max-width: 900px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem 0.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .message {
-      display: flex;
-      gap: 0.8rem;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .user-msg {
-      justify-content: flex-end;
-    }
-
-    .msg-bubble {
-      max-width: 75%;
-      padding: 0.9rem 1.2rem;
-      border-radius: 20px;
-      background: rgba(20, 35, 55, 0.8);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 255, 255, 0.25);
-      color: #e2edff;
-      line-height: 1.5;
-    }
-
-    .user-msg .msg-bubble {
-      background: rgba(0, 160, 255, 0.2);
-      border-color: #00b7ff;
-    }
-
-    .assistant-msg .msg-bubble {
-      background: rgba(10, 25, 45, 0.9);
-      border-color: rgba(0, 255, 200, 0.4);
-    }
-
-    .typing-cursor {
-      display: inline-block;
-      width: 8px;
-      height: 16px;
-      background: #00f2ff;
-      margin-left: 4px;
-      animation: blink 1s infinite;
-    }
-
-    .input-area {
-      display: flex;
-      gap: 0.8rem;
-      padding: 1.2rem 0;
-      align-items: center;
-    }
-
-    #user-input {
-      flex: 1;
-      background: rgba(15, 25, 40, 0.8);
-      border: 1px solid #1e3b5a;
-      border-radius: 30px;
-      padding: 0.9rem 1.5rem;
-      color: white;
-      font-size: 1rem;
-      outline: none;
-      transition: 0.2s;
-    }
-
-    #user-input:focus {
-      border-color: #00e5ff;
-      box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-    }
-
-    .mic-btn, .send-btn {
-      background: rgba(0, 200, 255, 0.15);
-      border: 1px solid #00b7ff;
-      color: #00f2ff;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 1.3rem;
-      transition: 0.2s;
-    }
-
-    .mic-btn.recording {
-      background: rgba(255, 50, 50, 0.4);
-      border-color: #ff4444;
-      box-shadow: 0 0 20px red;
-    }
-
-    .clear-chat {
-      background: transparent;
-      border: 1px solid #334455;
-      color: #aabbcc;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      margin-left: 0.5rem;
-      cursor: pointer;
-    }
-
-    /* MAPA */
-    #map {
-      height: 100%;
-      width: 100%;
-      border-radius: 20px;
-      border: 1px solid #00e5ff40;
-    }
-
-    .map-wrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* CLIMA */
-    .weather-card {
-      background: rgba(12, 25, 40, 0.7);
-      backdrop-filter: blur(15px);
-      padding: 2rem;
-      border-radius: 24px;
-      border: 1px solid #00e5ff50;
-      max-width: 400px;
-    }
-
-    /* MEMÓRIA */
-    .memory-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-    }
-
-    .memory-item {
-      background: #0f1a2b;
-      padding: 1rem;
-      border-radius: 12px;
-      border-left: 4px solid #00e5ff;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Pobreflix - Vingadores</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <aside class="sidebar">
-    <div class="logo-area">
-      <span class="logo-icon">🧠</span>
-      <span class="logo-text">SEXTA-FEIRA</span>
+    <div class="header">
+        <h1 class="logo">🎬 POBREFLIX</h1>
+        <span class="movie-count" id="movieCount">0 filmes</span>
     </div>
-    <nav class="nav-tabs">
-      <button class="tab-btn active" data-view="chat"><i>💬</i> Chat</button>
-      <button class="tab-btn" data-view="map"><i>🗺️</i> Mapa</button>
-      <button class="tab-btn" data-view="weather"><i>☁️</i> Clima</button>
-      <button class="tab-btn" data-view="memory"><i>🧠</i> Memória</button>
-    </nav>
-    <div class="clock-widget">
-      <div id="live-clock">--:--</div>
-      <div class="date-string" id="date-display"></div>
-    </div>
-  </aside>
 
-  <main class="main-panel">
-    <!-- Chat View -->
-    <div id="chat-view" class="view active-view">
-      <div class="chat-container">
-        <div class="chat-messages" id="chat-messages"></div>
-        <div class="input-area">
-          <button id="mic-btn" class="mic-btn" title="Ouvir">🎤</button>
-          <input type="text" id="user-input" placeholder="Fale com a Sexta-feira" autocomplete="off">
-          <button id="send-btn" class="send-btn">➤</button>
-          <button id="clear-chat" class="clear-chat">Limpar</button>
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Buscar filme..." class="search-input">
+    </div>
+
+    <div class="categories" id="categoriesContainer">
+        <div class="category active" data-cat="all">TODOS</div>
+        <div class="category" data-cat="acao">AÇÃO</div>
+        <div class="category" data-cat="comedia">COMÉDIA</div>
+        <div class="category" data-cat="drama">DRAMA</div>
+        <div class="category" data-cat="ficcao">FICÇÃO</div>
+        <div class="category" data-cat="terror">TERROR</div>
+    </div>
+
+    <div id="loading" class="loading" style="display:none;">
+        <div class="spinner"></div>
+        <p>Carregando filmes...</p>
+    </div>
+
+    <div id="filmesContainer" class="filmes-container"></div>
+
+    <div id="playerModal" class="player-modal" style="display:none;">
+        <div class="modal-content">
+            <div class="close-btn" id="closePlayer">✕</div>
+            <div class="video-container">
+                <video id="videoPlayer" controls playsinline webkit-playsinline>
+                    Seu navegador não suporta vídeo HTML5.
+                </video>
+            </div>
+            <div class="video-info">
+                <h3 id="videoTitle"></h3>
+                <div class="error-msg" id="errorMsg" style="display:none;">
+                    <p>❌ Erro ao carregar o vídeo!</p>
+                    <button id="retryBtn" class="retry-btn">🔄 TENTAR NOVAMENTE</button>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-    <!-- Mapa View -->
-    <div id="map-view" class="view">
-      <div class="map-wrapper"><div id="map"></div></div>
+
+    <button id="addMovieBtn" class="add-movie-btn" title="Adicionar filme">+</button>
+
+    <div id="addMovieModal" class="add-movie-modal" style="display:none;">
+        <div class="add-movie-content">
+            <div class="close-btn" id="closeAddMovie">✕</div>
+            <h2>Adicionar Filme</h2>
+            <form id="addMovieForm">
+                <input type="text" id="movieTitle" placeholder="Título do filme" required>
+                <input type="text" id="movieCapa" placeholder="URL da capa (imagem)">
+                <input type="text" id="movieVideo" placeholder="URL do vídeo" required>
+                <select id="movieCategory">
+                    <option value="acao">Ação</option>
+                    <option value="comedia">Comédia</option>
+                    <option value="drama">Drama</option>
+                    <option value="ficcao">Ficção</option>
+                    <option value="terror">Terror</option>
+                </select>
+                <button type="submit" class="submit-btn">ADICIONAR FILME</button>
+            </form>
+        </div>
     </div>
-    <!-- Clima View -->
-    <div id="weather-view" class="view">
-      <div class="weather-card" id="weather-data">Carregando clima...</div>
-    </div>
-    <!-- Memória View -->
-    <div id="memory-view" class="view">
-      <h2 style="margin-bottom:1rem;">📌 Memórias salvas</h2>
-      <div id="memory-container" class="memory-list"></div>
-    </div>
-  </main>
 
-  <!-- Firebase + Leaflet -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBzqQmGpMz-7AYM7_Mpt2owpmf6BXjW1yk",
-      authDomain: "nucisz.firebaseapp.com",
-      databaseURL: "https://nucisz-default-rtdb.firebaseio.com",
-      projectId: "nucisz",
-      storageBucket: "nucisz.firebasestorage.app",
-      messagingSenderId: "90824519141",
-      appId: "1:90824519141:web:8ec5d6686c07cbbf94930c",
-      measurementId: "G-BZ4S7Q3NM2"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    window.db = db;
-    window.firebaseRef = ref;
-    window.firebasePush = push;
-    window.firebaseSet = set;
-    window.firebaseOnValue = onValue;
-  </script>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    // ========== SISTEMA JARVIS - SEXTA-FEIRA ==========
-    (function() {
-      // ESTADO GLOBAL
-      const DEEPSEEK_KEY = 'sk-73237aacabab46b3ba7dd37d76a84ccf';
-      const WEATHER_KEY = 'xqj042lJFAHcsK1U';
-      let isRequesting = false;
-      let recognition = null;
-      let mapInstance = null;
-      let currentMarker = null;
-
-      // Elementos UI
-      const views = document.querySelectorAll('.view');
-      const tabBtns = document.querySelectorAll('.tab-btn');
-      const chatMessages = document.getElementById('chat-messages');
-      const userInput = document.getElementById('user-input');
-      const sendBtn = document.getElementById('send-btn');
-      const micBtn = document.getElementById('mic-btn');
-      const clearBtn = document.getElementById('clear-chat');
-      const liveClock = document.getElementById('live-clock');
-      const dateDisplay = document.getElementById('date-display');
-
-      // Inicialização
-      document.addEventListener('DOMContentLoaded', () => {
-        setupTabs();
-        startClock();
-        loadChatHistory();
-        setupSpeech();
-        initMap();
-        fetchWeather();
-        loadMemories();
-        setupEventListeners();
-      });
-
-      function setupTabs() {
-        tabBtns.forEach(btn => {
-          btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const viewId = btn.dataset.view + '-view';
-            views.forEach(v => v.classList.remove('active-view'));
-            document.getElementById(viewId).classList.add('active-view');
-            if (viewId === 'map-view') setTimeout(() => mapInstance?.invalidateSize(), 100);
-          });
-        });
-      }
-
-      function startClock() {
-        setInterval(() => {
-          const now = new Date();
-          liveClock.textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-          dateDisplay.textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-        }, 1000);
-      }
-
-      // ========== CHAT + DEEPSEEK ==========
-      async function sendMessage(message) {
-        if (!message.trim() || isRequesting) return;
-        isRequesting = true;
-        addMessage('user', message);
-        userInput.value = '';
-        showTypingIndicator();
-
-        const memoryContext = await getMemoryContext();
-        const systemPrompt = `Você é a Sexta-feira, assistente pessoal inteligente estilo Jarvis. Seja sucinto, amigável e lembre-se do contexto. Memórias do usuário: ${memoryContext || 'nenhuma ainda'}. Hoje é ${new Date().toLocaleDateString('pt-BR')}.`;
-
-        try {
-          const response = await fetch('https://api.deepseek.com/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${DEEPSEEK_KEY}`
-            },
-            body: JSON.stringify({
-              model: 'deepseek-chat',
-              messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: message }
-              ],
-              temperature: 0.7,
-              max_tokens: 300
-            })
-          });
-
-          if (!response.ok) throw new Error('API error');
-          const data = await response.json();
-          const reply = data.choices[0].message.content;
-          removeTypingIndicator();
-          addMessage('assistant', reply);
-          speakText(reply);
-          saveToLocalHistory(message, reply);
-        } catch (error) {
-          removeTypingIndicator();
-          addMessage('assistant', 'Desculpe, estou com dificuldades técnicas. Tente novamente.');
-        } finally {
-          isRequesting = false;
-        }
-      }
-
-      function addMessage(role, text) {
-        const div = document.createElement('div');
-        div.className = `message ${role}-msg`;
-        div.innerHTML = `<div class="msg-bubble">${text}</div>`;
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
-
-      function showTypingIndicator() {
-        const div = document.createElement('div');
-        div.className = 'message assistant-msg typing-indicator';
-        div.innerHTML = '<div class="msg-bubble"><span class="typing-cursor"></span> pensando...</div>';
-        div.id = 'typing-indicator';
-        chatMessages.appendChild(div);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-      }
-
-      function removeTypingIndicator() {
-        const el = document.getElementById('typing-indicator');
-        if (el) el.remove();
-      }
-
-      function saveToLocalHistory(userMsg, aiMsg) {
-        const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-        history.push({ user: userMsg, ai: aiMsg, time: Date.now() });
-        localStorage.setItem('chatHistory', JSON.stringify(history.slice(-50)));
-      }
-
-      function loadChatHistory() {
-        const history = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-        history.forEach(h => {
-          addMessage('user', h.user);
-          addMessage('assistant', h.ai);
-        });
-      }
-
-      // ========== VOZ ==========
-      function setupSpeech() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-          micBtn.style.display = 'none';
-          return;
-        }
-        recognition = new SpeechRecognition();
-        recognition.lang = 'pt-BR';
-        recognition.interimResults = false;
-        recognition.continuous = false;
-
-        recognition.onstart = () => micBtn.classList.add('recording');
-        recognition.onend = () => micBtn.classList.remove('recording');
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          userInput.value = transcript;
-          sendMessage(transcript);
-        };
-      }
-
-      function speakText(text) {
-        if (!window.speechSynthesis) return;
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'pt-BR';
-        utterance.rate = 1.1;
-        window.speechSynthesis.speak(utterance);
-      }
-
-      // ========== MAPA LEAFLET ==========
-      function initMap() {
-        mapInstance = L.map('map').setView([-23.5505, -46.6333], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap'
-        }).addTo(mapInstance);
-
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const { latitude, longitude } = pos.coords;
-              mapInstance.setView([latitude, longitude], 15);
-              if (currentMarker) mapInstance.removeLayer(currentMarker);
-              currentMarker = L.marker([latitude, longitude]).addTo(mapInstance)
-                .bindPopup('Você está aqui').openPopup();
-            },
-            (err) => console.warn('Geolocalização negada'),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-          );
-        }
-      }
-
-      // ========== CLIMA METEOCLUE ==========
-      async function fetchWeather() {
-        try {
-          const pos = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
-          });
-          const { latitude, longitude } = pos.coords;
-          const url = `https://my.meteoblue.com/packages/current?apikey=${WEATHER_KEY}&lat=${latitude}&lon=${longitude}&format=json`;
-          const res = await fetch(url);
-          const data = await res.json();
-          const temp = data.data?.current?.temperature || '--';
-          const wind = data.data?.current?.windspeed || '--';
-          document.getElementById('weather-data').innerHTML = `
-            <h2>🌤️ Clima atual</h2>
-            <p>Temperatura: ${temp}°C</p>
-            <p>Vento: ${wind} km/h</p>
-            <p>Local: ${data.data?.name || 'sua área'}</p>
-          `;
-        } catch (e) {
-          document.getElementById('weather-data').innerHTML = 'Clima indisponível.';
-        }
-      }
-
-      // ========== FIREBASE MEMÓRIA ==========
-      function saveMemory(key, value) {
-        const db = window.db;
-        const memoryRef = window.firebaseRef(db, 'memories/' + key.replace(/[.#$/[\]]/g, '_'));
-        window.firebaseSet(memoryRef, { value, timestamp: Date.now() });
-      }
-
-      function loadMemories() {
-        const db = window.db;
-        const memRef = window.firebaseRef(db, 'memories');
-        window.firebaseOnValue(memRef, (snapshot) => {
-          const container = document.getElementById('memory-container');
-          if (!container) return;
-          container.innerHTML = '';
-          const data = snapshot.val();
-          if (data) {
-            Object.entries(data).forEach(([key, obj]) => {
-              const div = document.createElement('div');
-              div.className = 'memory-item';
-              div.innerHTML = `<strong>${key}</strong>: ${obj.value}`;
-              container.appendChild(div);
-            });
-          } else {
-            container.innerHTML = '<p>Nenhuma memória salva.</p>';
-          }
-        });
-      }
-
-      async function getMemoryContext() {
-        return new Promise((resolve) => {
-          const db = window.db;
-          const memRef = window.firebaseRef(db, 'memories');
-          window.firebaseOnValue(memRef, (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return resolve('');
-            const entries = Object.entries(data).map(([k, v]) => `${k}: ${v.value}`).join('; ');
-            resolve(entries);
-          }, { onlyOnce: true });
-        });
-      }
-
-      // Aprendizado automático: detecta frases como "meu nome é X"
-      function learnFromMessage(text) {
-        const patterns = [
-          { regex: /meu nome é (\w+)/i, key: 'nome' },
-          { regex: /aqui é o? (.*)/i, key: 'lugar' },
-          { regex: /sexta-feira agora significa (.*)/i, key: 'significado_sexta' }
-        ];
-        patterns.forEach(p => {
-          const match = text.match(p.regex);
-          if (match) {
-            saveMemory(p.key, match[1].trim());
-          }
-        });
-      }
-
-      // ========== EVENTOS ==========
-      function setupEventListeners() {
-        sendBtn.addEventListener('click', () => {
-          const msg = userInput.value.trim();
-          if (msg) {
-            learnFromMessage(msg);
-            sendMessage(msg);
-          }
-        });
-
-        userInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            const msg = userInput.value.trim();
-            if (msg) {
-              learnFromMessage(msg);
-              sendMessage(msg);
-            }
-          }
-        });
-
-        micBtn.addEventListener('click', () => {
-          if (recognition) {
-            recognition.start();
-          }
-        });
-
-        clearBtn.addEventListener('click', () => {
-          chatMessages.innerHTML = '';
-          localStorage.removeItem('chatHistory');
-        });
-      }
-    })();
-  </script>
+    <script src="script.js"></script>
 </body>
 </html>
