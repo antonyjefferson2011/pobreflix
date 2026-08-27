@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Pobreflix - Vingadores</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -17,18 +16,12 @@
         <input type="text" id="searchInput" placeholder="🔍 Buscar filme..." class="search-input">
     </div>
 
-    <div class="categories" id="categoriesContainer">
+    <div class="categories">
         <div class="category active" data-cat="all">TODOS</div>
         <div class="category" data-cat="acao">AÇÃO</div>
         <div class="category" data-cat="comedia">COMÉDIA</div>
         <div class="category" data-cat="drama">DRAMA</div>
         <div class="category" data-cat="ficcao">FICÇÃO</div>
-        <div class="category" data-cat="terror">TERROR</div>
-    </div>
-
-    <div id="loading" class="loading" style="display:none;">
-        <div class="spinner"></div>
-        <p>Carregando filmes...</p>
     </div>
 
     <div id="filmesContainer" class="filmes-container"></div>
@@ -37,7 +30,7 @@
         <div class="modal-content">
             <div class="close-btn" id="closePlayer">✕</div>
             <div class="video-container">
-                <video id="videoPlayer" controls playsinline webkit-playsinline>
+                <video id="videoPlayer" controls playsinline>
                     Seu navegador não suporta vídeo HTML5.
                 </video>
             </div>
@@ -66,7 +59,6 @@
                     <option value="comedia">Comédia</option>
                     <option value="drama">Drama</option>
                     <option value="ficcao">Ficção</option>
-                    <option value="terror">Terror</option>
                 </select>
                 <button type="submit" class="submit-btn">ADICIONAR FILME</button>
             </form>
