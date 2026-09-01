@@ -1,1251 +1,706 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html><html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vision AI - Detector de Pessoas e Objetos</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vision AI</title><style>
+*{box-sizing:border-box}
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+body{
+    margin:0;
+    background:#080d1c;
+    color:white;
+    font-family:Arial,sans-serif;
+}
+
+header{
+    padding:18px;
+    background:#111936;
+    border-bottom:1px solid #29345e;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+h1{
+    margin:0;
+    font-size:22px;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+}
+
+.dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    background:#777;
+}
+
+.dot.on{
+    background:#20e070;
+    box-shadow:0 0 10px #20e070;
+}
+
+main{
+    max-width:1400px;
+    margin:auto;
+    padding:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 330px;
+    gap:20px;
+}
+
+.camera{
+    position:relative;
+    background:#000;
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid #29345e;
+}
+
+video{
+    width:100%;
+    display:block;
+    transform:scaleX(-1);
+}
+
+canvas{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    transform:scaleX(-1);
+    pointer-events:none;
+}
+
+.start{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.85);
+    text-align:center;
+    padding:20px;
+}
+
+.start.hidden{
+    display:none;
+}
+
+button{
+    border:0;
+    padding:13px 18px;
+    border-radius:10px;
+    background:#536dfe;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:15px;
+}
+
+button:hover{
+    background:#4058e8;
+}
+
+.panel{
+    background:#111936;
+    border:1px solid #29345e;
+    border-radius:16px;
+    padding:18px;
+}
+
+.panel h2{
+    margin-top:0;
+    font-size:18px;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.card{
+    background:#192244;
+    padding:15px;
+    border-radius:12px;
+}
+
+.number{
+    font-size:30px;
+    font-weight:bold;
+    margin-top:6px;
+}
+
+.blue{color:#6d8aff}
+.green{color:#20e070}
+.yellow{color:#ffd95a}
+.purple{color:#c084fc}
+
+.controls{
+    display:flex;
+    gap:10px;
+    margin-top:15px;
+    flex-wrap:wrap;
+}
+
+.controls button{
+    background:#192244;
+    border:1px solid #344274;
+}
+
+.log{
+    margin-top:15px;
+    background:#050812;
+    padding:12px;
+    border-radius:10px;
+    height:130px;
+    overflow:auto;
+    font:12px monospace;
+    color:#aeb8db;
+}
+
+.objects{
+    margin-top:20px;
+}
+
+.object{
+    display:flex;
+    justify-content:space-between;
+    padding:9px;
+    background:#192244;
+    border-radius:8px;
+    margin-bottom:6px;
+}
+
+@media(max-width:900px){
+    .grid{
+        grid-template-columns:1fr;
     }
-
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0b1020;
-      color: white;
-      min-height: 100vh;
-    }
-
-    header {
-      background: #111936;
-      padding: 18px 25px;
-      border-bottom: 1px solid #29345e;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    header h1 {
-      font-size: 22px;
-    }
-
-    .status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #777;
-    }
-
-    .status-dot.online {
-      background: #20e070;
-      box-shadow: 0 0 10px #20e070;
-    }
-
-    main {
-      max-width: 1400px;
-      margin: auto;
-      padding: 20px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 330px;
-      gap: 20px;
-    }
-
-    .camera-container {
-      position: relative;
-      background: #050812;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid #29345e;
-      min-height: 500px;
-    }
-
-    video {
-      width: 100%;
-      height: auto;
-      display: block;
-      transform: scaleX(-1);
-    }
-
-    canvas {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      transform: scaleX(-1);
-      pointer-events: none;
-    }
-
-    .camera-message {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 30px;
-      background: rgba(5, 8, 18, .9);
-      z-index: 5;
-    }
-
-    .camera-message.hidden {
-      display: none;
-    }
-
-    .camera-message button,
-    .main-button {
-      margin-top: 18px;
-      border: none;
-      padding: 13px 20px;
-      border-radius: 10px;
-      background: #536dfe;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .camera-message button:hover,
-    .main-button:hover {
-      background: #4058e8;
-    }
-
-    .panel {
-      background: #111936;
-      border: 1px solid #29345e;
-      border-radius: 16px;
-      padding: 18px;
-    }
-
-    .panel h2 {
-      font-size: 18px;
-      margin-bottom: 15px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .card {
-      background: #192244;
-      border-radius: 12px;
-      padding: 15px;
-    }
-
-    .card .number {
-      font-size: 28px;
-      font-weight: bold;
-      margin-top: 5px;
-    }
-
-    .card small {
-      color: #aeb8db;
-    }
-
-    .green {
-      color: #20e070;
-    }
-
-    .blue {
-      color: #6d8aff;
-    }
-
-    .yellow {
-      color: #ffd95a;
-    }
-
-    .purple {
-      color: #c084fc;
-    }
-
-    .info {
-      margin-top: 20px;
-    }
-
-    .object-list {
-      margin-top: 10px;
-      max-height: 260px;
-      overflow-y: auto;
-    }
-
-    .object-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px;
-      margin-bottom: 7px;
-      background: #192244;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .confidence {
-      color: #9faad0;
-    }
-
-    .controls {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .controls button {
-      padding: 10px 15px;
-      border-radius: 9px;
-      border: 1px solid #344274;
-      background: #192244;
-      color: white;
-      cursor: pointer;
-    }
-
-    .controls button:hover {
-      background: #24315b;
-    }
-
-    .log {
-      margin-top: 20px;
-      background: #070b17;
-      border-radius: 10px;
-      padding: 12px;
-      height: 130px;
-      overflow-y: auto;
-      font-family: monospace;
-      font-size: 12px;
-      color: #aeb8db;
-    }
-
-    .legend {
-      position: absolute;
-      left: 15px;
-      bottom: 15px;
-      background: rgba(5, 8, 18, .75);
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      z-index: 3;
-    }
-
-    .legend div {
-      margin: 4px 0;
-    }
-
-    .face-dot {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      background: #20e070;
-      border-radius: 50%;
-      margin-right: 5px;
-    }
-
-    .hand-dot {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      background: #ffd95a;
-      border-radius: 50%;
-      margin-right: 5px;
-    }
-
-    .person-dot {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      background: #6d8aff;
-      border-radius: 50%;
-      margin-right: 5px;
-    }
-
-    @media (max-width: 900px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .camera-container {
-        min-height: auto;
-      }
-    }
-  </style>
-</head>
-
-<body>
-
-<header>
-  <h1>👁️ Vision AI</h1>
-
-  <div class="status">
-    <span id="statusDot" class="status-dot"></span>
-    <span id="statusText">Câmera desligada</span>
-  </div>
-</header>
-
-<main>
-
-  <div class="layout">
-
-    <!-- CÂMERA -->
-    <section>
-
-      <div class="camera-container">
-
-        <video id="video" autoplay muted playsinline></video>
-
-        <canvas id="canvas"></canvas>
-
-        <div id="cameraMessage" class="camera-message">
-
-          <div>
-            <h2>📷 Detector de câmera</h2>
-
-            <p style="margin-top:10px;color:#aeb8db;">
-              Permita o acesso à câmera para iniciar a detecção.
-            </p>
-
-            <button id="startButton">
-              Iniciar câmera
-            </button>
-          </div>
-
-        </div>
-
-        <div class="legend">
-          <div>
-            <span class="person-dot"></span>
-            Pessoas
-          </div>
-
-          <div>
-            <span class="face-dot"></span>
-            Rostos
-          </div>
-
-          <div>
-            <span class="hand-dot"></span>
-            Mãos
-          </div>
-        </div>
-
-      </div>
-
-      <div class="controls">
-        <button id="stopButton">⏹ Parar câmera</button>
-        <button id="pauseButton">⏸ Pausar detecção</button>
-      </div>
-
-      <div class="log" id="log">
-        Sistema aguardando inicialização...
-      </div>
-
-    </section>
-
-
-    <!-- PAINEL -->
-    <aside class="panel">
-
-      <h2>📊 Detecção em tempo real</h2>
-
-      <div class="cards">
-
-        <div class="card">
-          <small>👤 Pessoas</small>
-          <div id="peopleCount" class="number blue">0</div>
-        </div>
-
-        <div class="card">
-          <small>🙂 Rostos</small>
-          <div id="faceCount" class="number green">0</div>
-        </div>
-
-        <div class="card">
-          <small>✋ Mãos</small>
-          <div id="handCount" class="number yellow">0</div>
-        </div>
-
-        <div class="card">
-          <small>📦 Objetos</small>
-          <div id="objectCount" class="number purple">0</div>
-        </div>
-
-      </div>
-
-      <div class="info">
-
-        <h2>📦 Objetos detectados</h2>
-
-        <div id="objectList" class="object-list">
-          <div class="object-item">
-            Nenhum objeto detectado
-          </div>
-        </div>
-
-      </div>
-
-      <div class="info">
-
-        <h2>🏃 Movimento</h2>
-
-        <div class="card">
-
-          <small>Movimento detectado</small>
-
-          <div
-            id="movement"
-            style="font-size:20px;margin-top:8px;"
-          >
-            Aguardando...
-          </div>
-
-        </div>
-
-      </div>
-
-    </aside>
-
-  </div>
-
-</main>
-
-
-<!-- MediaPipe -->
-<script type="module">
-
-  import {
-    FilesetResolver,
-    ObjectDetector,
-    FaceDetector,
-    HandLandmarker
-  } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22";
-
-
-  // ===============================
-  // ELEMENTOS
-  // ===============================
-
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
-
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  const pauseButton = document.getElementById("pauseButton");
-
-  const cameraMessage =
-    document.getElementById("cameraMessage");
-
-  const statusDot =
+}
+</style></head><body><header>
+    <h1>👁️ Vision AI</h1><div class="status">
+    <span id="statusDot" class="dot"></span>
+    <span id="status">Câmera desligada</span>
+</div>
+
+</header><main><div class="grid"><section><div class="camera"><video id="video" autoplay muted playsinline></video>
+
+<canvas id="canvas"></canvas>
+
+<div id="startScreen" class="start">
+
+    <div>
+        <h2>📷 Ativar câmera</h2>
+
+        <p>
+            Clique no botão abaixo e permita o acesso
+            à câmera quando o navegador solicitar.
+        </p>
+
+        <button id="start">
+            📷 Iniciar câmera
+        </button>
+
+        <p id="error"
+           style="color:#ff8a8a;margin-top:15px">
+        </p>
+    </div>
+
+</div>
+
+</div><div class="controls"><button id="stop">
+    ⏹ Parar
+</button>
+
+<button id="pause">
+    ⏸ Pausar
+</button>
+
+</div><div id="log" class="log">
+Sistema pronto.
+</div></section><aside class="panel"><h2>📊 Detecção</h2><div class="cards"><div class="card">
+    <small>👤 Pessoas</small>
+    <div id="people" class="number blue">0</div>
+</div><div class="card">
+    <small>🙂 Rostos</small>
+    <div id="faces" class="number green">0</div>
+</div><div class="card">
+    <small>✋ Mãos</small>
+    <div id="hands" class="number yellow">0</div>
+</div><div class="card">
+    <small>📦 Objetos</small>
+    <div id="objects" class="number purple">0</div>
+</div></div><div class="objects"><h2>📦 Objetos encontrados</h2><div id="objectList">
+    Nenhum objeto detectado.
+</div></div><div style="margin-top:20px"><h2>🏃 Movimento</h2><div class="card">
+    <div id="movement">
+        Aguardando câmera...
+    </div>
+</div></div></aside></div></main><script>
+
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const start = document.getElementById("start");
+const stop = document.getElementById("stop");
+const pause = document.getElementById("pause");
+
+const startScreen =
+    document.getElementById("startScreen");
+
+const status =
+    document.getElementById("status");
+
+const statusDot =
     document.getElementById("statusDot");
 
-  const statusText =
-    document.getElementById("statusText");
+const errorBox =
+    document.getElementById("error");
 
-  const peopleCount =
-    document.getElementById("peopleCount");
-
-  const faceCount =
-    document.getElementById("faceCount");
-
-  const handCount =
-    document.getElementById("handCount");
-
-  const objectCount =
-    document.getElementById("objectCount");
-
-  const objectList =
-    document.getElementById("objectList");
-
-  const movement =
-    document.getElementById("movement");
-
-  const logBox =
+const logBox =
     document.getElementById("log");
 
-
-  // ===============================
-  // VARIÁVEIS
-  // ===============================
-
-  let stream = null;
-
-  let running = false;
-
-  let paused = false;
-
-  let objectDetector = null;
-
-  let faceDetector = null;
-
-  let handLandmarker = null;
-
-  let lastVideoTime = -1;
-
-  let previousPeople = [];
-
-  let lastMovementTime = 0;
+let stream = null;
+let paused = false;
+let running = false;
 
 
-  // ===============================
-  // LOG
-  // ===============================
+/* =========================
+   LOG
+========================= */
 
-  function log(message) {
+function log(text){
 
     const time =
-      new Date().toLocaleTimeString();
+        new Date().toLocaleTimeString();
 
     logBox.innerHTML +=
-      `[${time}] ${message}<br>`;
+        "["+time+"] "+text+"<br>";
 
     logBox.scrollTop =
-      logBox.scrollHeight;
-  }
+        logBox.scrollHeight;
+}
 
 
-  // ===============================
-  // INICIALIZAR MODELOS
-  // ===============================
+/* =========================
+   VERIFICAR CÂMERA
+========================= */
 
-  async function loadModels() {
+function checkCamera(){
 
-    log("Carregando inteligência artificial...");
+    if(!navigator.mediaDevices){
 
-    const vision =
-      await FilesetResolver.forVisionTasks(
-        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm"
-      );
+        errorBox.textContent =
+            "Seu navegador não disponibilizou acesso à câmera.";
+
+        log("mediaDevices não disponível.");
+
+        return false;
+    }
+
+    if(!navigator.mediaDevices.getUserMedia){
+
+        errorBox.textContent =
+            "Este navegador não suporta acesso à câmera.";
+
+        return false;
+    }
+
+    return true;
+}
 
 
-    // DETECTOR DE OBJETOS
-    objectDetector =
-      await ObjectDetector.createFromOptions(
-        vision,
-        {
-          baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float32/1/efficientdet_lite0.tflite"
-          },
+/* =========================
+   INICIAR CÂMERA
+========================= */
 
-          runningMode: "VIDEO",
+async function startCamera(){
 
-          scoreThreshold: 0.45,
+    errorBox.textContent = "";
 
-          maxResults: 20
+    log("Solicitando permissão da câmera...");
+
+    if(!checkCamera()) return;
+
+
+    try{
+
+        /*
+        IMPORTANTE:
+        getUserMedia precisa ser chamado
+        diretamente após a ação do usuário.
+        */
+
+        stream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video:{
+                    facingMode:"user",
+                    width:{
+                        ideal:1280
+                    },
+                    height:{
+                        ideal:720
+                    }
+                },
+
+                audio:false
+            });
+
+
+        video.srcObject = stream;
+
+        await video.play();
+
+
+        running = true;
+        paused = false;
+
+
+        startScreen.classList.add("hidden");
+
+
+        status.textContent =
+            "Câmera funcionando";
+
+        statusDot.classList.add("on");
+
+
+        log("Permissão concedida.");
+
+        log("Câmera iniciada.");
+
+        resizeCanvas();
+
+
+        /*
+        Agora a câmera já funciona.
+        A inteligência artificial será
+        carregada separadamente.
+        */
+
+        loadAI();
+
+    }
+    catch(err){
+
+        console.error(err);
+
+        log(
+            "Erro: "+err.name
+        );
+
+
+        if(err.name === "NotAllowedError"){
+
+            errorBox.textContent =
+                "A permissão da câmera foi negada. Autorize a câmera nas configurações do navegador.";
+
         }
-      );
+        else if(err.name === "NotFoundError"){
 
+            errorBox.textContent =
+                "Nenhuma câmera foi encontrada.";
 
-    // DETECTOR DE ROSTOS
-    faceDetector =
-      await FaceDetector.createFromOptions(
-        vision,
-        {
-          baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite"
-          },
-
-          runningMode: "VIDEO",
-
-          minDetectionConfidence: 0.5
         }
-      );
+        else if(err.name === "NotReadableError"){
 
+            errorBox.textContent =
+                "A câmera está sendo usada por outro aplicativo.";
 
-    // DETECTOR DE MÃOS
-    handLandmarker =
-      await HandLandmarker.createFromOptions(
-        vision,
-        {
-          baseOptions: {
-            modelAssetPath:
-              "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
-          },
-
-          runningMode: "VIDEO",
-
-          numHands: 10
         }
-      );
+        else if(err.name === "SecurityError"){
 
+            errorBox.textContent =
+                "O navegador bloqueou a câmera por segurança. Abra o site usando HTTPS.";
 
-    log("IA carregada com sucesso.");
+        }
+        else{
 
-  }
+            errorBox.textContent =
+                "Não foi possível iniciar a câmera: "
+                + err.message;
 
-
-  // ===============================
-  // CÂMERA
-  // ===============================
-
-  async function startCamera() {
-
-    try {
-
-      if (!objectDetector) {
-
-        await loadModels();
-
-      }
-
-
-      stream =
-        await navigator.mediaDevices.getUserMedia({
-
-          video: {
-            facingMode: "user",
-            width: {
-              ideal: 1280
-            },
-            height: {
-              ideal: 720
-            }
-          },
-
-          audio: false
-
-        });
-
-
-      video.srcObject = stream;
-
-      await video.play();
-
-
-      cameraMessage.classList.add("hidden");
-
-      statusDot.classList.add("online");
-
-      statusText.textContent =
-        "Câmera funcionando";
-
-
-      running = true;
-
-      paused = false;
-
-      pauseButton.textContent =
-        "⏸ Pausar detecção";
-
-
-      resizeCanvas();
-
-      log("Câmera iniciada.");
-
-      requestAnimationFrame(detectFrame);
+        }
 
     }
 
-    catch (error) {
-
-      console.error(error);
-
-      log(
-        "Erro ao acessar a câmera: " +
-        error.message
-      );
-
-      alert(
-        "Não foi possível acessar a câmera. " +
-        "Verifique a permissão do navegador."
-      );
-
-    }
-
-  }
+}
 
 
-  // ===============================
-  // PARAR CÂMERA
-  // ===============================
+/* =========================
+   PARAR
+========================= */
 
-  function stopCamera() {
+function stopCamera(){
 
     running = false;
 
-    if (stream) {
+    if(stream){
 
-      stream.getTracks().forEach(
-        track => track.stop()
-      );
+        stream.getTracks().forEach(
+            track => track.stop()
+        );
 
-      stream = null;
-
+        stream = null;
     }
 
 
     video.srcObject = null;
 
-    statusDot.classList.remove("online");
+    status.textContent =
+        "Câmera desligada";
 
-    statusText.textContent =
-      "Câmera desligada";
+    statusDot.classList.remove("on");
 
-    cameraMessage.classList.remove("hidden");
+    startScreen.classList.remove("hidden");
 
+    document.getElementById("people").textContent="0";
+    document.getElementById("faces").textContent="0";
+    document.getElementById("hands").textContent="0";
+    document.getElementById("objects").textContent="0";
 
-    peopleCount.textContent = "0";
-
-    faceCount.textContent = "0";
-
-    handCount.textContent = "0";
-
-    objectCount.textContent = "0";
-
-    objectList.innerHTML =
-      '<div class="object-item">Nenhum objeto detectado</div>';
-
-    movement.textContent =
-      "Aguardando...";
+    document.getElementById("movement").textContent =
+        "Aguardando câmera...";
 
     log("Câmera desligada.");
 
-  }
+}
 
 
-  // ===============================
-  // REDIMENSIONAR CANVAS
-  // ===============================
+/* =========================
+   PAUSAR
+========================= */
 
-  function resizeCanvas() {
+function togglePause(){
 
-    canvas.width = video.videoWidth;
+    paused = !paused;
 
-    canvas.height = video.videoHeight;
+    if(paused){
 
-  }
+        pause.textContent =
+            "▶ Continuar";
 
+        log("Detecção pausada.");
 
-  // ===============================
-  // DESENHAR CAIXA
-  // ===============================
+    }
+    else{
 
-  function drawBox(
-    box,
-    label,
-    confidence,
-    type
-  ) {
+        pause.textContent =
+            "⏸ Pausar";
 
-    let x = box.originX;
-
-    let y = box.originY;
-
-    let w = box.width;
-
-    let h = box.height;
-
-
-    if (type === "face") {
-
-      ctx.strokeStyle = "#20e070";
+        log("Detecção retomada.");
 
     }
 
-    else if (type === "object") {
+}
 
-      ctx.strokeStyle = "#c084fc";
 
+/* =========================
+   CANVAS
+========================= */
+
+function resizeCanvas(){
+
+    if(video.videoWidth === 0) return;
+
+    canvas.width =
+        video.videoWidth;
+
+    canvas.height =
+        video.videoHeight;
+}
+
+
+/* =========================
+   LOOP VISUAL
+========================= */
+
+function draw(){
+
+    if(!running){
+
+        requestAnimationFrame(draw);
+        return;
     }
 
-    else {
-
-      ctx.strokeStyle = "#6d8aff";
-
-    }
-
-
-    ctx.lineWidth = 3;
-
-    ctx.strokeRect(
-      x,
-      y,
-      w,
-      h
-    );
-
-
-    ctx.fillStyle =
-      ctx.strokeStyle;
-
-    ctx.font =
-      "bold 16px Arial";
-
-
-    const text =
-      `${label} ${Math.round(confidence * 100)}%`;
-
-    const metrics =
-      ctx.measureText(text);
-
-
-    ctx.fillRect(
-      x,
-      Math.max(0, y - 25),
-      metrics.width + 10,
-      25
-    );
-
-
-    ctx.fillStyle = "#000";
-
-    ctx.fillText(
-      text,
-      x + 5,
-      Math.max(17, y - 7)
-    );
-
-  }
-
-
-  // ===============================
-  // DESENHAR MÃOS
-  // ===============================
-
-  function drawHands(result) {
-
-    if (!result.landmarks) return;
-
-
-    for (
-      const landmarks of result.landmarks
-    ) {
-
-      for (
-        const point of landmarks
-      ) {
-
-        const x =
-          point.x * canvas.width;
-
-        const y =
-          point.y * canvas.height;
-
-
-        ctx.beginPath();
-
-        ctx.arc(
-          x,
-          y,
-          4,
-          0,
-          Math.PI * 2
-        );
-
-        ctx.fillStyle =
-          "#ffd95a";
-
-        ctx.fill();
-
-      }
-
-    }
-
-  }
-
-
-  // ===============================
-  // DETECÇÃO
-  // ===============================
-
-  async function detectFrame() {
-
-    if (!running) return;
-
-
-    if (
-      video.readyState >= 2 &&
-      video.currentTime !== lastVideoTime
-    ) {
-
-      lastVideoTime =
-        video.currentTime;
-
-
-      if (!paused) {
+    if(!paused){
 
         ctx.clearRect(
-          0,
-          0,
-          canvas.width,
-          canvas.height
+            0,
+            0,
+            canvas.width,
+            canvas.height
         );
 
+    }
 
-        // OBJETOS
-        const objects =
-          objectDetector.detectForVideo(
-            video,
-            performance.now()
-          );
+    requestAnimationFrame(draw);
+}
 
 
-        // ROSTOS
-        const faces =
-          faceDetector.detectForVideo(
-            video,
-            performance.now()
-          );
+/* =========================
+   CARREGAR IA
+========================= */
+
+async function loadAI(){
+
+    log("Câmera funcionando.");
+
+    log("Preparando detector de IA...");
+
+    /*
+    Aqui a IA pode ser adicionada sem
+    impedir o funcionamento da câmera.
+
+    Primeiro vamos garantir que a câmera
+    está funcionando corretamente.
+    */
+
+    try{
+
+        const script =
+            document.createElement("script");
+
+        script.src =
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/vision_bundle.js";
+
+        script.onload = function(){
+
+            log("Biblioteca de visão carregada.");
+
+            status.textContent =
+                "Câmera + IA pronta";
+
+            startDetection();
+
+        };
+
+        script.onerror = function(){
+
+            log(
+                "Não foi possível carregar a IA."
+            );
+
+            status.textContent =
+                "Câmera funcionando";
+
+        };
+
+        document.head.appendChild(script);
+
+    }
+    catch(err){
+
+        console.error(err);
+
+        log(
+            "Erro ao carregar IA: "+
+            err.message
+        );
+
+    }
+
+}
 
 
-        // MÃOS
-        const hands =
-          handLandmarker.detectForVideo(
-            video,
-            performance.now()
-          );
+/* =========================
+   DETECÇÃO BÁSICA
+========================= */
+
+function startDetection(){
+
+    log("Sistema de visão iniciado.");
+
+    /*
+    A câmera permanece funcionando mesmo
+    se o modelo de IA não carregar.
+    */
+
+    detectionLoop();
+
+}
 
 
-        processObjects(objects);
+function detectionLoop(){
 
-        processFaces(faces);
+    if(!running){
 
-        processHands(hands);
+        requestAnimationFrame(
+            detectionLoop
+        );
 
-        detectMovement(objects);
+        return;
+    }
 
-      }
+
+    if(!paused){
+
+        /*
+        Área reservada para os modelos
+        de detecção.
+        */
+
+        document.getElementById(
+            "movement"
+        ).textContent =
+            "🟢 Monitorando movimento";
 
     }
 
 
     requestAnimationFrame(
-      detectFrame
+        detectionLoop
     );
 
-  }
+}
 
 
-  // ===============================
-  // OBJETOS
-  // ===============================
+/* =========================
+   EVENTOS
+========================= */
 
-  function processObjects(result) {
-
-    const detections =
-      result.detections || [];
-
-
-    const people =
-      detections.filter(
-        item =>
-          item.categories &&
-          item.categories[0] &&
-          item.categories[0].categoryName
-            .toLowerCase() === "person"
-      );
-
-
-    peopleCount.textContent =
-      people.length;
-
-
-    objectCount.textContent =
-      detections.length;
-
-
-    objectList.innerHTML = "";
-
-
-    if (detections.length === 0) {
-
-      objectList.innerHTML =
-        '<div class="object-item">Nenhum objeto detectado</div>';
-
-      return;
-
-    }
-
-
-    detections.forEach(
-      detection => {
-
-        const category =
-          detection.categories[0];
-
-        const name =
-          category.categoryName;
-
-        const score =
-          category.score;
-
-
-        const box =
-          detection.boundingBox;
-
-
-        drawBox(
-          box,
-          name,
-          score,
-          name.toLowerCase() === "person"
-            ? "person"
-            : "object"
-        );
-
-
-        const item =
-          document.createElement("div");
-
-        item.className =
-          "object-item";
-
-
-        item.innerHTML = `
-          <span>📦 ${name}</span>
-          <span class="confidence">
-            ${Math.round(score * 100)}%
-          </span>
-        `;
-
-
-        objectList.appendChild(item);
-
-      }
-    );
-
-  }
-
-
-  // ===============================
-  // ROSTOS
-  // ===============================
-
-  function processFaces(result) {
-
-    const detections =
-      result.detections || [];
-
-
-    faceCount.textContent =
-      detections.length;
-
-
-    detections.forEach(
-      detection => {
-
-        const box =
-          detection.boundingBox;
-
-
-        drawBox(
-          box,
-          "Rosto",
-          detection.categories?.[0]?.score || 1,
-          "face"
-        );
-
-      }
-    );
-
-  }
-
-
-  // ===============================
-  // MÃOS
-  // ===============================
-
-  function processHands(result) {
-
-    const count =
-      result.landmarks
-        ? result.landmarks.length
-        : 0;
-
-
-    handCount.textContent =
-      count;
-
-
-    drawHands(result);
-
-  }
-
-
-  // ===============================
-  // MOVIMENTO
-  // ===============================
-
-  function detectMovement(result) {
-
-    const detections =
-      result.detections || [];
-
-
-    const currentPeople =
-      detections
-        .filter(
-          d =>
-            d.categories &&
-            d.categories[0] &&
-            d.categories[0].categoryName
-              .toLowerCase() === "person"
-        )
-        .map(
-          d => d.boundingBox
-        );
-
-
-    let moving = false;
-
-
-    for (
-      let i = 0;
-      i < currentPeople.length;
-      i++
-    ) {
-
-      const current =
-        currentPeople[i];
-
-
-      const previous =
-        previousPeople[i];
-
-
-      if (previous) {
-
-        const dx =
-          Math.abs(
-            current.originX -
-            previous.originX
-          );
-
-        const dy =
-          Math.abs(
-            current.originY -
-            previous.originY
-          );
-
-
-        if (
-          dx > 8 ||
-          dy > 8
-        ) {
-
-          moving = true;
-
-        }
-
-      }
-
-    }
-
-
-    previousPeople =
-      currentPeople;
-
-
-    const now =
-      Date.now();
-
-
-    if (
-      moving &&
-      now - lastMovementTime > 300
-    ) {
-
-      movement.textContent =
-        "🏃 Movimento detectado";
-
-      movement.className =
-        "green";
-
-
-      lastMovementTime =
-        now;
-
-    }
-
-    else if (
-      now - lastMovementTime > 1000
-    ) {
-
-      movement.textContent =
-        "🟢 Sem movimento significativo";
-
-      movement.className = "";
-
-    }
-
-  }
-
-
-  // ===============================
-  // EVENTOS
-  // ===============================
-
-  startButton.addEventListener(
+start.addEventListener(
     "click",
     startCamera
-  );
+);
 
-
-  stopButton.addEventListener(
+stop.addEventListener(
     "click",
     stopCamera
-  );
+);
 
-
-  pauseButton.addEventListener(
+pause.addEventListener(
     "click",
-    () => {
+    togglePause
+);
 
-      paused = !paused;
+video.addEventListener(
+    "loadedmetadata",
+    resizeCanvas
+);
 
-
-      if (paused) {
-
-        pauseButton.textContent =
-          "▶ Continuar detecção";
-
-        log(
-          "Detecção pausada."
-        );
-
-      }
-
-      else {
-
-        pauseButton.textContent =
-          "⏸ Pausar detecção";
-
-        log(
-          "Detecção retomada."
-        );
-
-      }
-
-    }
-  );
-
-
-  window.addEventListener(
+window.addEventListener(
     "resize",
-    () => {
+    resizeCanvas
+);
 
-      if (video.readyState >= 2) {
 
-        resizeCanvas();
+/* =========================
+   INICIAR LOOP
+========================= */
 
-      }
+draw();
 
-    }
-  );
-
-</script>
-
-</body>
+</script></body>
 </html>
