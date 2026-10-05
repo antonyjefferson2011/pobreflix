@@ -7,416 +7,745 @@
 <title>Apuração Eleitoral 2026</title>
 
 <style>
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    min-height: 100%;
+}
+
+body {
+    font-family: Inter, Arial, sans-serif;
+    background:
+        radial-gradient(circle at 10% 0%, #172554 0%, transparent 32%),
+        radial-gradient(circle at 90% 0%, #312e81 0%, transparent 30%),
+        #070b14;
+    color: #f8fafc;
+}
+
+button {
+    font: inherit;
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(7, 11, 20, .82);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.header-inner {
+    max-width: 1400px;
+    margin: auto;
+    padding: 16px 24px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    width: 44px;
+    height: 44px;
+
+    border-radius: 13px;
+
+    display: grid;
+    place-items: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #7c3aed
+        );
+
+    font-size: 22px;
+}
+
+.logo-title {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.logo-subtitle {
+    color: #64748b;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 13px;
+
+    border-radius: 999px;
+
+    color: #86efac;
+
+    background: rgba(34,197,94,.09);
+    border: 1px solid rgba(34,197,94,.2);
+
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #22c55e;
+
+    box-shadow:
+        0 0 12px #22c55e;
+
+    animation: pulse 1.4s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
     }
 
-    body {
-        font-family: Inter, Arial, Helvetica, sans-serif;
-        background:
-            radial-gradient(circle at top left, #172554 0%, transparent 35%),
-            radial-gradient(circle at top right, #312e81 0%, transparent 30%),
-            #080b14;
-        color: #f8fafc;
-        min-height: 100vh;
+    50% {
+        opacity: .35;
     }
+}
 
-    header {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        backdrop-filter: blur(18px);
-        background: rgba(8, 11, 20, .82);
-        border-bottom: 1px solid rgba(255,255,255,.08);
-    }
+.container {
+    max-width: 1400px;
+    margin: auto;
 
-    .header-inner {
-        max-width: 1250px;
-        margin: auto;
-        padding: 18px 22px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-    }
+    padding: 35px 24px 60px;
+}
 
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 13px;
-    }
+.hero {
+    margin-bottom: 24px;
+}
 
-    .brand-icon {
-        width: 43px;
-        height: 43px;
-        border-radius: 13px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, #2563eb, #7c3aed);
-        font-size: 21px;
-        box-shadow: 0 8px 30px rgba(37,99,235,.3);
-    }
+.hero h1 {
+    margin: 0;
 
-    .brand h1 {
-        font-size: 19px;
-        font-weight: 800;
-    }
+    font-size: clamp(30px, 5vw, 52px);
 
-    .brand span {
-        color: #94a3b8;
-        font-size: 12px;
-    }
+    letter-spacing: -2px;
+}
 
-    .live {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        background: rgba(34,197,94,.1);
-        border: 1px solid rgba(34,197,94,.25);
-        color: #86efac;
-        font-size: 12px;
-        font-weight: 700;
-    }
+.hero p {
+    margin-top: 9px;
 
-    .live-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #22c55e;
-        box-shadow: 0 0 12px #22c55e;
-        animation: pulse 1.5s infinite;
-    }
+    color: #94a3b8;
 
-    @keyframes pulse {
-        0%,100% { opacity: 1; }
-        50% { opacity: .35; }
-    }
+    font-size: 14px;
+}
 
-    main {
-        max-width: 1250px;
-        margin: auto;
-        padding: 35px 22px 60px;
-    }
+.stats {
+    display: grid;
 
-    .hero {
-        margin-bottom: 25px;
-    }
+    grid-template-columns:
+        repeat(4, 1fr);
 
-    .hero h2 {
-        font-size: clamp(28px, 5vw, 46px);
-        letter-spacing: -1.5px;
-        margin-bottom: 8px;
-    }
+    gap: 14px;
 
-    .hero p {
-        color: #94a3b8;
-        font-size: 14px;
+    margin-bottom: 18px;
+}
+
+.card {
+    background:
+        rgba(15,23,42,.72);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 18px 60px rgba(0,0,0,.18);
+}
+
+.stat {
+    padding: 20px;
+}
+
+.stat-label {
+    color: #64748b;
+
+    font-size: 10px;
+    font-weight: 800;
+
+    letter-spacing: .8px;
+}
+
+.stat-value {
+    margin-top: 9px;
+
+    font-size: 25px;
+    font-weight: 900;
+}
+
+.stat-small {
+    margin-top: 5px;
+
+    color: #64748b;
+
+    font-size: 10px;
+}
+
+.layout {
+    display: grid;
+
+    grid-template-columns:
+        minmax(420px, 1.05fr)
+        minmax(420px, .95fr);
+
+    gap: 18px;
+}
+
+.panel {
+    padding: 22px;
+
+    background:
+        rgba(15,23,42,.76);
+
+    border:
+        1px solid rgba(255,255,255,.07);
+
+    border-radius: 22px;
+
+    box-shadow:
+        0 18px 60px rgba(0,0,0,.2);
+}
+
+.panel-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+}
+
+.panel-title {
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.panel-subtitle {
+    color: #64748b;
+    font-size: 11px;
+}
+
+.map-wrap {
+    position: relative;
+
+    min-height: 500px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    border-radius: 17px;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(37,99,235,.08),
+            transparent 65%
+        );
+}
+
+#map {
+    width: 100%;
+    height: 510px;
+}
+
+.state {
+    fill: #1e293b;
+
+    stroke: #64748b;
+    stroke-width: .7;
+
+    cursor: pointer;
+
+    transition:
+        fill .25s,
+        stroke .25s,
+        transform .25s;
+}
+
+.state:hover {
+    stroke: white;
+    stroke-width: 1.5;
+    filter: brightness(1.3);
+}
+
+.map-loading {
+    position: absolute;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+.map-info {
+    margin-top: 13px;
+
+    padding: 14px;
+
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.035);
+
+    border:
+        1px solid rgba(255,255,255,.06);
+
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 15px;
+}
+
+.map-state-name {
+    font-weight: 900;
+}
+
+.map-state-info {
+    color: #64748b;
+
+    font-size: 11px;
+
+    margin-top: 3px;
+}
+
+.map-leader {
+    text-align: right;
+}
+
+.map-leader-name {
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.map-leader-percent {
+    color: #94a3b8;
+
+    font-size: 11px;
+
+    margin-top: 3px;
+}
+
+.candidate {
+    padding: 17px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.06);
+}
+
+.candidate:last-child {
+    border-bottom: none;
+}
+
+.candidate-top {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 11px;
+}
+
+.candidate-left {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    min-width: 0;
+}
+
+.position {
+    width: 30px;
+    height: 30px;
+
+    display: grid;
+    place-items: center;
+
+    flex-shrink: 0;
+
+    border-radius: 8px;
+
+    background:
+        rgba(255,255,255,.06);
+
+    color: #cbd5e1;
+
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+
+    display: grid;
+    place-items: center;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    color: white;
+
+    font-weight: 900;
+}
+
+.candidate-text {
+    min-width: 0;
+}
+
+.candidate-name {
+    font-size: 14px;
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.candidate-party {
+    color: #64748b;
+
+    font-size: 10px;
+
+    margin-top: 3px;
+}
+
+.candidate-percent {
+    font-size: 21px;
+    font-weight: 900;
+
+    white-space: nowrap;
+}
+
+.progress {
+    height: 9px;
+
+    overflow: hidden;
+
+    background:
+        rgba(255,255,255,.055);
+
+    border-radius: 999px;
+}
+
+.progress-fill {
+    height: 100%;
+
+    width: 0%;
+
+    border-radius: inherit;
+
+    transition:
+        width .8s ease;
+}
+
+.candidate-bottom {
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-top: 8px;
+
+    color: #64748b;
+
+    font-size: 10px;
+}
+
+.ranking {
+    margin-top: 4px;
+}
+
+.rank {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 13px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.06);
+}
+
+.rank:last-child {
+    border-bottom: none;
+}
+
+.rank-number {
+    width: 29px;
+    height: 29px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 8px;
+
+    background:
+        rgba(255,255,255,.06);
+
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.rank-main {
+    flex: 1;
+
+    min-width: 0;
+}
+
+.rank-name {
+    font-size: 12px;
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rank-votes {
+    margin-top: 3px;
+
+    color: #64748b;
+
+    font-size: 10px;
+}
+
+.rank-percent {
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.state-list {
+    margin-top: 20px;
+}
+
+.state-row {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 9px 0;
+
+    border-bottom:
+        1px solid rgba(255,255,255,.04);
+}
+
+.state-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+}
+
+.state-name {
+    flex: 1;
+
+    font-size: 11px;
+}
+
+.state-leader {
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.state-percent {
+    color: #94a3b8;
+
+    font-size: 10px;
+}
+
+.update {
+    margin-top: 18px;
+
+    padding: 12px 14px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 10px;
+
+    background:
+        rgba(255,255,255,.035);
+
+    border:
+        1px solid rgba(255,255,255,.06);
+
+    border-radius: 12px;
+
+    color: #64748b;
+
+    font-size: 10px;
+}
+
+.update strong {
+    color: #86efac;
+}
+
+.error {
+    color: #fca5a5 !important;
+}
+
+footer {
+    max-width: 1400px;
+
+    margin: auto;
+
+    padding:
+        0 24px
+        30px;
+
+    text-align: center;
+
+    color: #475569;
+
+    font-size: 10px;
+}
+
+@media(max-width: 1000px) {
+
+    .layout {
+        grid-template-columns: 1fr;
     }
 
     .stats {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
-        margin-bottom: 25px;
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+}
+
+@media(max-width: 600px) {
+
+    .container {
+        padding:
+            25px 13px 45px;
+    }
+
+    .header-inner {
+        padding:
+            13px;
+    }
+
+    .logo-subtitle {
+        display: none;
+    }
+
+    .stats {
+        gap: 9px;
     }
 
     .stat {
-        background: rgba(15,23,42,.72);
-        border: 1px solid rgba(255,255,255,.07);
-        border-radius: 18px;
-        padding: 20px;
-        box-shadow: 0 15px 45px rgba(0,0,0,.18);
-    }
-
-    .stat-label {
-        color: #94a3b8;
-        font-size: 12px;
-        margin-bottom: 9px;
+        padding: 15px;
     }
 
     .stat-value {
-        font-size: 25px;
-        font-weight: 800;
+        font-size: 19px;
     }
 
-    .content {
-        display: grid;
-        grid-template-columns: 1.65fr 1fr;
-        gap: 18px;
+    #map {
+        height: 390px;
     }
 
-    .panel {
-        background: rgba(15,23,42,.78);
-        border: 1px solid rgba(255,255,255,.07);
-        border-radius: 22px;
-        padding: 22px;
-        box-shadow: 0 18px 60px rgba(0,0,0,.2);
+    .map-wrap {
+        min-height: 390px;
     }
 
-    .panel-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 22px;
+    .candidate-percent {
+        font-size: 17px;
     }
-
-    .panel-title h3 {
-        font-size: 18px;
-    }
-
-    .panel-title span {
-        color: #64748b;
-        font-size: 12px;
-    }
-
-    .candidate {
-        position: relative;
-        padding: 17px 0;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-    }
-
-    .candidate:last-child {
-        border-bottom: none;
-    }
-
-    .candidate-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 15px;
-        margin-bottom: 11px;
-    }
-
-    .candidate-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
-    }
-
-    .position {
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
-        background: rgba(255,255,255,.06);
-        display: grid;
-        place-items: center;
-        font-size: 12px;
-        font-weight: 800;
-        color: #cbd5e1;
-        flex-shrink: 0;
-    }
-
-    .avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-weight: 900;
-        color: white;
-        flex-shrink: 0;
-        background: linear-gradient(135deg, #334155, #64748b);
-    }
-
-    .candidate-name {
-        font-weight: 800;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .candidate-party {
-        color: #64748b;
-        font-size: 11px;
-        margin-top: 3px;
-    }
-
-    .percentage {
-        font-size: 22px;
-        font-weight: 900;
-        white-space: nowrap;
-    }
-
-    .bar {
-        height: 9px;
-        background: rgba(255,255,255,.06);
-        border-radius: 99px;
-        overflow: hidden;
-    }
-
-    .bar-fill {
-        height: 100%;
-        width: 0%;
-        border-radius: inherit;
-        transition: width .7s ease;
-        background: linear-gradient(90deg, #2563eb, #60a5fa);
-    }
-
-    .candidate-meta {
-        display: flex;
-        justify-content: space-between;
-        color: #64748b;
-        font-size: 11px;
-        margin-top: 8px;
-    }
-
-    .ranking-item {
-        display: flex;
-        align-items: center;
-        gap: 13px;
-        padding: 14px 0;
-        border-bottom: 1px solid rgba(255,255,255,.06);
-    }
-
-    .ranking-item:last-child {
-        border-bottom: none;
-    }
-
-    .rank-number {
-        width: 29px;
-        height: 29px;
-        border-radius: 8px;
-        display: grid;
-        place-items: center;
-        background: rgba(255,255,255,.06);
-        font-size: 12px;
-        font-weight: 800;
-        flex-shrink: 0;
-    }
-
-    .rank-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .rank-name {
-        font-size: 13px;
-        font-weight: 700;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .rank-votes {
-        color: #64748b;
-        font-size: 11px;
-        margin-top: 3px;
-    }
-
-    .rank-percent {
-        font-size: 14px;
-        font-weight: 900;
-    }
-
-    .update-box {
-        margin-top: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 13px 15px;
-        background: rgba(255,255,255,.035);
-        border: 1px solid rgba(255,255,255,.06);
-        border-radius: 13px;
-        font-size: 11px;
-        color: #64748b;
-    }
-
-    .status {
-        color: #86efac;
-    }
-
-    .error {
-        color: #fca5a5;
-    }
-
-    footer {
-        max-width: 1250px;
-        margin: auto;
-        padding: 0 22px 30px;
-        color: #475569;
-        font-size: 11px;
-        text-align: center;
-    }
-
-    @media (max-width: 900px) {
-        .stats {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .content {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 550px) {
-        .header-inner {
-            padding: 14px;
-        }
-
-        main {
-            padding: 25px 14px 45px;
-        }
-
-        .stats {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        .stat {
-            padding: 15px;
-        }
-
-        .stat-value {
-            font-size: 19px;
-        }
-
-        .percentage {
-            font-size: 18px;
-        }
-
-        .candidate-info {
-            gap: 8px;
-        }
-    }
+}
 </style>
 </head>
 
 <body>
 
-<header>
+<header class="header">
+
     <div class="header-inner">
 
-        <div class="brand">
-            <div class="brand-icon">🗳️</div>
+        <div class="logo">
+
+            <div class="logo-icon">
+                🗳️
+            </div>
 
             <div>
-                <h1>Apuração Eleitoral</h1>
-                <span>Eleições Gerais 2026</span>
+
+                <div class="logo-title">
+                    Apuração Eleitoral
+                </div>
+
+                <div class="logo-subtitle">
+                    Eleições Gerais 2026
+                </div>
+
             </div>
+
         </div>
 
         <div class="live">
+
             <div class="live-dot"></div>
-            TEMPO REAL
+
+            DADOS EM ATUALIZAÇÃO
+
         </div>
 
     </div>
+
 </header>
 
 
-<main>
+<main class="container">
 
     <section class="hero">
 
-        <h2>Presidente da República</h2>
+        <h1>
+            Presidente da República
+        </h1>
 
         <p>
-            Acompanhamento automático da totalização dos votos
+            Acompanhamento da totalização nacional
         </p>
 
     </section>
@@ -424,72 +753,201 @@
 
     <section class="stats">
 
-        <div class="stat">
+        <div class="card stat">
+
             <div class="stat-label">
                 SEÇÕES APURADAS
             </div>
 
-            <div class="stat-value" id="sections">
-                — 
-            </div>
-        </div>
-
-
-        <div class="stat">
-            <div class="stat-label">
-                TOTAL DE SEÇÕES
-            </div>
-
-            <div class="stat-value" id="totalSections">
+            <div
+                class="stat-value"
+                id="sections"
+            >
                 —
             </div>
+
+            <div
+                class="stat-small"
+                id="sectionsDetail"
+            >
+                carregando...
+            </div>
+
         </div>
 
 
-        <div class="stat">
-            <div class="stat-label">
-                VOTOS COMPUTADOS
-            </div>
+        <div class="card stat">
 
-            <div class="stat-value" id="totalVotes">
-                —
-            </div>
-        </div>
-
-
-        <div class="stat">
             <div class="stat-label">
                 TOTALIZAÇÃO
             </div>
 
-            <div class="stat-value" id="percentageTotal">
+            <div
+                class="stat-value"
+                id="totalization"
+            >
                 —
             </div>
+
+            <div class="stat-small">
+                percentual das seções
+            </div>
+
+        </div>
+
+
+        <div class="card stat">
+
+            <div class="stat-label">
+                VOTOS VÁLIDOS
+            </div>
+
+            <div
+                class="stat-value"
+                id="validVotes"
+            >
+                —
+            </div>
+
+            <div class="stat-small">
+                computados
+            </div>
+
+        </div>
+
+
+        <div class="card stat">
+
+            <div class="stat-label">
+                ÚLTIMA ATUALIZAÇÃO
+            </div>
+
+            <div
+                class="stat-value"
+                id="clock"
+                style="font-size:20px"
+            >
+                —
+            </div>
+
+            <div
+                class="stat-small"
+                id="generation"
+            >
+                —
+            </div>
+
         </div>
 
     </section>
 
 
-    <section class="content">
+    <section class="layout">
 
-        <!-- RANKING PRINCIPAL -->
+
+        <!-- MAPA -->
 
         <div class="panel">
 
-            <div class="panel-title">
+            <div class="panel-header">
 
-                <h3>Resultado</h3>
+                <div>
 
-                <span id="lastGeneration">
-                    Aguardando dados...
-                </span>
+                    <div class="panel-title">
+                        Mapa do Brasil
+                    </div>
+
+                    <div class="panel-subtitle">
+                        Clique em um estado
+                    </div>
+
+                </div>
+
+                <div
+                    class="panel-subtitle"
+                    id="mapStatus"
+                >
+                    carregando mapa...
+                </div>
 
             </div>
 
-            <div id="candidates">
 
-                <div style="color:#64748b;font-size:13px;">
-                    Carregando dados oficiais...
+            <div class="map-wrap">
+
+                <div
+                    class="map-loading"
+                    id="mapLoading"
+                >
+                    Carregando mapa...
+                </div>
+
+                <svg
+                    id="map"
+                    viewBox="0 0 1000 700"
+                    preserveAspectRatio="xMidYMid meet"
+                ></svg>
+
+            </div>
+
+
+            <div class="map-info">
+
+                <div>
+
+                    <div
+                        class="map-state-name"
+                        id="selectedState"
+                    >
+                        Brasil
+                    </div>
+
+                    <div
+                        class="map-state-info"
+                        id="selectedStateInfo"
+                    >
+                        Selecione um estado
+                    </div>
+
+                </div>
+
+                <div class="map-leader">
+
+                    <div
+                        class="map-leader-name"
+                        id="selectedLeader"
+                    >
+                        —
+                    </div>
+
+                    <div
+                        class="map-leader-percent"
+                        id="selectedLeaderPercent"
+                    >
+                        —
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="state-list">
+
+                <div class="panel-header">
+
+                    <div class="panel-title">
+                        Estados
+                    </div>
+
+                    <div class="panel-subtitle">
+                        liderança
+                    </div>
+
+                </div>
+
+                <div id="stateList">
+                    —
                 </div>
 
             </div>
@@ -497,34 +955,73 @@
         </div>
 
 
-        <!-- RANKING -->
+        <!-- RESULTADO -->
 
         <div class="panel">
 
-            <div class="panel-title">
+            <div class="panel-header">
 
-                <h3>Ranking</h3>
+                <div>
 
-                <span>por votos</span>
+                    <div class="panel-title">
+                        Resultado nacional
+                    </div>
 
-            </div>
+                    <div class="panel-subtitle">
+                        votos válidos
+                    </div>
 
-            <div id="ranking">
+                </div>
 
-                <div style="color:#64748b;font-size:13px;">
-                    Carregando...
+                <div
+                    class="panel-subtitle"
+                    id="resultStatus"
+                >
+                    —
                 </div>
 
             </div>
 
-            <div class="update-box">
+
+            <div id="candidates">
+
+                <div class="panel-subtitle">
+                    Carregando resultados...
+                </div>
+
+            </div>
+
+
+            <div class="panel-header"
+                 style="margin-top:28px">
+
+                <div class="panel-title">
+                    Ranking
+                </div>
+
+                <div class="panel-subtitle">
+                    por votos
+                </div>
+
+            </div>
+
+
+            <div
+                class="ranking"
+                id="ranking"
+            >
+                —
+            </div>
+
+
+            <div class="update">
 
                 <span>
                     Próxima atualização
                 </span>
 
                 <strong id="countdown">
-                    30s
+                    60s
                 </strong>
 
             </div>
@@ -538,193 +1035,93 @@
 
 <footer>
 
-    Dados eleitorais: Tribunal Superior Eleitoral (TSE).
-    Este painel é uma interface independente para visualização dos dados públicos.
+    Dados oficiais: Tribunal Superior Eleitoral (TSE).
+    Painel independente, sem vínculo institucional com o TSE.
 
 </footer>
 
 
 <script>
+
+/* =====================================================
+   CONFIGURAÇÃO TSE
+===================================================== */
+
 const TSE_URL =
     "https://resultados.tse.jus.br/oficial/ele2026/6257/dados/br/br-c0001-e006257-u.json";
 
+
+const MAP_URL =
+    "https://cdn.jsdelivr.net/gh/henriquemalvar/br-geojson@main/dist/estados.geojson";
+
+
 const UPDATE_INTERVAL = 60000;
 
-let countdown = 60;
 
-const candidatesElement =
-    document.getElementById("candidates");
+/* =====================================================
+   ESTADOS
+===================================================== */
 
-const rankingElement =
-    document.getElementById("ranking");
-
-const sectionsElement =
-    document.getElementById("sections");
-
-const totalSectionsElement =
-    document.getElementById("totalSections");
-
-const totalVotesElement =
-    document.getElementById("totalVotes");
-
-const percentageTotalElement =
-    document.getElementById("percentageTotal");
-
-const lastGenerationElement =
-    document.getElementById("lastGeneration");
-
-const countdownElement =
-    document.getElementById("countdown");
-
-
-function numberBR(value) {
-    return new Intl.NumberFormat("pt-BR")
-        .format(Number(value) || 0);
-}
-
-
-function percentageBR(value) {
-    return Number(value || 0).toLocaleString("pt-BR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }) + "%";
-}
+const stateNames = {
+    AC: "Acre",
+    AL: "Alagoas",
+    AP: "Amapá",
+    AM: "Amazonas",
+    BA: "Bahia",
+    CE: "Ceará",
+    DF: "Distrito Federal",
+    ES: "Espírito Santo",
+    GO: "Goiás",
+    MA: "Maranhão",
+    MT: "Mato Grosso",
+    MS: "Mato Grosso do Sul",
+    MG: "Minas Gerais",
+    PA: "Pará",
+    PB: "Paraíba",
+    PR: "Paraná",
+    PE: "Pernambuco",
+    PI: "Piauí",
+    RJ: "Rio de Janeiro",
+    RN: "Rio Grande do Norte",
+    RS: "Rio Grande do Sul",
+    RO: "Rondônia",
+    RR: "Roraima",
+    SC: "Santa Catarina",
+    SP: "São Paulo",
+    SE: "Sergipe",
+    TO: "Tocantins"
+};
 
 
-function escapeHTML(value) {
-    return String(value ?? "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
+/* =====================================================
+   ELEMENTOS
+===================================================== */
+
+const $ = id =>
+    document.getElementById(id);
 
 
-/*
-=========================================================
- LÊ O JSON REAL DO TSE
-=========================================================
-*/
+/* =====================================================
+   ESTADO DA APLICAÇÃO
+===================================================== */
 
-function parseTSE(data) {
+let nationalCandidates = [];
 
-    const cargo =
-        data?.carg?.[0] || {};
+let stateResults = {};
 
-    const secoes =
-        data?.s || {};
+let selectedUF = null;
 
-    const votos =
-        data?.v || {};
+let mapFeatures = [];
 
-    const eleitorado =
-        data?.e || {};
+let countdown =
+    UPDATE_INTERVAL / 1000;
 
 
-    const candidatos = [];
+/* =====================================================
+   CORES
+===================================================== */
 
-
-    /*
-     Estrutura oficial:
-
-     carg
-       agr
-         par
-           cand
-    */
-
-    for (const agrupamento of cargo.agr || []) {
-
-        for (const partido of agrupamento.par || []) {
-
-            for (const candidato of partido.cand || []) {
-
-                candidatos.push({
-
-                    numero:
-                        String(candidato.n ?? ""),
-
-                    nome:
-                        candidato.nm ||
-                        candidato.nmu ||
-                        "Candidato",
-
-                    partido:
-                        partido.sg || "",
-
-                    votos:
-                        Number(candidato.vap) || 0,
-
-                    percentual:
-                        Number(candidato.pvap) || 0,
-
-                    situacao:
-                        candidato.st || ""
-
-                });
-
-            }
-
-        }
-
-    }
-
-
-    /*
-     Ordenação por votos.
-    */
-
-    candidatos.sort(
-        (a, b) => b.votos - a.votos
-    );
-
-
-    return {
-
-        candidatos,
-
-        secoesTotal:
-            Number(secoes.ts) || 0,
-
-        secoesApuradas:
-            Number(secoes.st) || 0,
-
-        percentualApurado:
-            Number(secoes.pst) || 0,
-
-        votosValidos:
-            Number(votos.vv) || 0,
-
-        votosBrancos:
-            Number(votos.vb) || 0,
-
-        votosNulos:
-            Number(votos.tvn) || 0,
-
-        eleitorado:
-            Number(eleitorado.te) || 0,
-
-        comparecimento:
-            Number(eleitorado.c) || 0,
-
-        gerado:
-            data.dg && data.hg
-                ? `${data.dg} ${data.hg}`
-                : "—"
-
-    };
-
-}
-
-
-/*
-=========================================================
- CORES
-=========================================================
-*/
-
-const colors = [
+const candidateColors = [
     "#2563eb",
     "#ef4444",
     "#16a34a",
@@ -736,80 +1133,848 @@ const colors = [
 ];
 
 
-function getColor(index) {
-    return colors[index % colors.length];
+function candidateColor(index) {
+
+    return candidateColors[
+        index % candidateColors.length
+    ];
+
 }
 
 
-/*
-=========================================================
- RENDER PRINCIPAL
-=========================================================
-*/
+/* =====================================================
+   FORMATAÇÃO
+===================================================== */
 
-function render(data) {
+function numberBR(value) {
+
+    return new Intl.NumberFormat(
+        "pt-BR"
+    ).format(
+        Number(value) || 0
+    );
+
+}
+
+
+function percentBR(value) {
+
+    return Number(
+        value || 0
+    ).toLocaleString(
+        "pt-BR",
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    ) + "%";
+
+}
+
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+/* =====================================================
+   PERCENTUAL REAL
+===================================================== */
+
+function calculatePercent(votes, total) {
+
+    if (!total || total <= 0) {
+
+        return 0;
+
+    }
+
+    return (
+        Number(votes || 0) /
+        Number(total) *
+        100
+    );
+
+}
+
+
+/* =====================================================
+   EXTRAI CANDIDATOS DO EA20
+===================================================== */
+
+function extractCandidates(data) {
+
+    const candidates = [];
+
+    const cargo =
+        data?.carg?.find(
+            item =>
+                String(item.cd) === "1" ||
+                String(item.c) === "1"
+        ) ||
+        data?.carg?.[0];
+
+
+    if (!cargo) {
+
+        console.warn(
+            "Cargo não encontrado",
+            data
+        );
+
+        return [];
+
+    }
+
+
+    for (
+        const agrupamento
+        of cargo.agr || []
+    ) {
+
+        for (
+            const partido
+            of agrupamento.par || []
+        ) {
+
+            for (
+                const candidato
+                of partido.cand || []
+            ) {
+
+                const votos =
+                    Number(
+                        candidato.vap ??
+                        candidato.vv ??
+                        candidato.votos ??
+                        0
+                    );
+
+
+                candidates.push({
+
+                    numero:
+                        candidato.n ?? "",
+
+                    nome:
+                        candidato.nm ??
+                        candidato.nmu ??
+                        "Candidato",
+
+                    partido:
+                        partido.sg ??
+                        partido.nm ??
+                        "",
+
+                    votos
+
+                });
+
+            }
+
+        }
+
+    }
+
+
+    /*
+     Remove candidatos repetidos.
+    */
+
+    const unique = new Map();
+
+
+    for (const candidate of candidates) {
+
+        const key =
+            String(candidate.numero) +
+            "-" +
+            candidate.nome;
+
+
+        if (
+            !unique.has(key) ||
+            candidate.votos >
+            unique.get(key).votos
+        ) {
+
+            unique.set(
+                key,
+                candidate
+            );
+
+        }
+
+    }
+
 
     const result =
-        parseTSE(data);
+        [...unique.values()];
 
 
     /*
-     ESTATÍSTICAS
+     Soma dos votos dos candidatos.
     */
 
-    sectionsElement.textContent =
-        numberBR(result.secoesApuradas);
-
-    totalSectionsElement.textContent =
-        numberBR(result.secoesTotal);
-
-    totalVotesElement.textContent =
-        numberBR(result.votosValidos);
-
-    percentageTotalElement.textContent =
-        percentageBR(result.percentualApurado);
-
-
-    lastGenerationElement.textContent =
-        "Atualizado em " + result.gerado;
+    const total =
+        result.reduce(
+            (sum, c) =>
+                sum + c.votos,
+            0
+        );
 
 
     /*
-     CANDIDATOS
+     Percentual calculado.
     */
 
-    if (!result.candidatos.length) {
+    for (const candidate of result) {
 
-        candidatesElement.innerHTML = `
-            <div style="
-                color:#fca5a5;
-                padding:20px 0;
-            ">
-                Nenhum candidato encontrado.
-            </div>
-        `;
+        candidate.percentual =
+            calculatePercent(
+                candidate.votos,
+                total
+            );
 
-        rankingElement.innerHTML = "";
+    }
+
+
+    result.sort(
+        (a, b) =>
+            b.votos - a.votos
+    );
+
+
+    return result;
+
+}
+
+
+/* =====================================================
+   EXTRAI INFORMAÇÕES DE SEÇÕES
+===================================================== */
+
+function extractSections(data) {
+
+    const s =
+        data?.s || {};
+
+
+    return {
+
+        total:
+            Number(
+                s.ts ??
+                s.st ??
+                0
+            ),
+
+        apuradas:
+            Number(
+                s.sa ??
+                s.st ??
+                0
+            ),
+
+        percentual:
+            Number(
+                s.pst ??
+                s.p ??
+                0
+            )
+
+    };
+
+}
+
+
+/* =====================================================
+   CARREGA MAPA
+===================================================== */
+
+async function loadMap() {
+
+    try {
+
+        const response =
+            await fetch(
+                MAP_URL,
+                {
+                    cache: "force-cache"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Mapa HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const geojson =
+            await response.json();
+
+
+        mapFeatures =
+            geojson.features || [];
+
+
+        drawMap();
+
+
+        $("mapLoading")
+            .style.display = "none";
+
+
+        $("mapStatus")
+            .textContent =
+            mapFeatures.length +
+            " estados";
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro no mapa:",
+            error
+        );
+
+
+        $("mapLoading")
+            .textContent =
+            "Não foi possível carregar o mapa.";
+
+
+        $("mapStatus")
+            .textContent =
+            "erro";
+
+    }
+
+}
+
+
+/* =====================================================
+   PROJEÇÃO GEOJSON → SVG
+===================================================== */
+
+function getCoordinates(feature) {
+
+    const geometry =
+        feature.geometry;
+
+
+    if (
+        geometry.type ===
+        "Polygon"
+    ) {
+
+        return geometry.coordinates;
+
+    }
+
+
+    if (
+        geometry.type ===
+        "MultiPolygon"
+    ) {
+
+        return geometry.coordinates.flat();
+
+    }
+
+
+    return [];
+
+}
+
+
+function calculateBounds(features) {
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+
+    function visit(coords) {
+
+        if (
+            typeof coords[0] ===
+            "number"
+        ) {
+
+            const x =
+                coords[0];
+
+            const y =
+                coords[1];
+
+
+            minX =
+                Math.min(
+                    minX,
+                    x
+                );
+
+            maxX =
+                Math.max(
+                    maxX,
+                    x
+                );
+
+            minY =
+                Math.min(
+                    minY,
+                    y
+                );
+
+            maxY =
+                Math.max(
+                    maxY,
+                    y
+                );
+
+            return;
+
+        }
+
+
+        for (
+            const item
+            of coords
+        ) {
+
+            visit(item);
+
+        }
+
+    }
+
+
+    for (
+        const feature
+        of features
+    ) {
+
+        visit(
+            getCoordinates(
+                feature
+            )
+        );
+
+    }
+
+
+    return {
+        minX,
+        maxX,
+        minY,
+        maxY
+    };
+
+}
+
+
+const mapBounds =
+    {
+        minX: -74,
+        maxX: -34,
+        minY: -34,
+        maxY: 6
+    };
+
+
+function project(lon, lat) {
+
+    const width = 920;
+    const height = 620;
+
+    const padding = 30;
+
+
+    const x =
+        padding +
+        (
+            (lon - mapBounds.minX) /
+            (mapBounds.maxX - mapBounds.minX)
+        ) *
+        (
+            width -
+            padding * 2
+        );
+
+
+    const y =
+        height -
+        padding -
+        (
+            (lat - mapBounds.minY) /
+            (mapBounds.maxY - mapBounds.minY)
+        ) *
+        (
+            height -
+            padding * 2
+        );
+
+
+    return [
+        x,
+        y
+    ];
+
+}
+
+
+/* =====================================================
+   GEOJSON → SVG PATH
+===================================================== */
+
+function ringToPath(ring) {
+
+    return ring.map(
+        (point, index) => {
+
+            const [
+                x,
+                y
+            ] =
+                project(
+                    point[0],
+                    point[1]
+                );
+
+
+            return (
+                index === 0
+                    ? `M ${x} ${y}`
+                    : `L ${x} ${y}`
+            );
+
+        }
+    ).join(" ") + " Z";
+
+}
+
+
+function featureToPath(feature) {
+
+    const paths = [];
+
+
+    for (
+        const polygon
+        of getCoordinates(
+            feature
+        )
+    ) {
+
+        for (
+            const ring
+            of polygon
+        ) {
+
+            paths.push(
+                ringToPath(ring)
+            );
+
+        }
+
+    }
+
+
+    return paths.join(" ");
+
+}
+
+
+/* =====================================================
+   DESCOBRE SIGLA DO ESTADO
+===================================================== */
+
+function getUF(feature) {
+
+    const p =
+        feature.properties || {};
+
+
+    return (
+        p.sigla ||
+        p.uf ||
+        p.abbrev ||
+        p["hc-key"]?.replace(
+            "br-",
+            ""
+        ) ||
+        feature.id ||
+        ""
+    ).toString().toUpperCase();
+
+}
+
+
+/* =====================================================
+   RENDERIZA MAPA
+===================================================== */
+
+function drawMap() {
+
+    const svg =
+        $("map");
+
+
+    svg.innerHTML = "";
+
+
+    for (
+        const feature
+        of mapFeatures
+    ) {
+
+        const uf =
+            getUF(feature);
+
+
+        const path =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "path"
+            );
+
+
+        path.setAttribute(
+            "d",
+            featureToPath(
+                feature
+            )
+        );
+
+
+        path.classList.add(
+            "state"
+        );
+
+
+        path.dataset.uf =
+            uf;
+
+
+        path.addEventListener(
+            "click",
+            () => {
+
+                selectState(uf);
+
+            }
+        );
+
+
+        svg.appendChild(path);
+
+    }
+
+
+    updateMapColors();
+
+}
+
+
+/* =====================================================
+   RESULTADO POR ESTADO
+===================================================== */
+
+function getStateLeader(uf) {
+
+    const result =
+        stateResults[uf];
+
+
+    if (
+        !result ||
+        !result.length
+    ) {
+
+        return null;
+
+    }
+
+
+    return result[0];
+
+}
+
+
+function updateMapColors() {
+
+    document
+        .querySelectorAll(".state")
+        .forEach(path => {
+
+            const uf =
+                path.dataset.uf;
+
+
+            const leader =
+                getStateLeader(uf);
+
+
+            if (!leader) {
+
+                path.style.fill =
+                    "#1e293b";
+
+                return;
+
+            }
+
+
+            const index =
+                nationalCandidates.findIndex(
+                    candidate =>
+                        candidate.numero ===
+                        leader.numero
+                );
+
+
+            path.style.fill =
+                candidateColor(
+                    Math.max(
+                        index,
+                        0
+                    )
+                );
+
+
+            path.style.opacity =
+                "0.85";
+
+        });
+
+}
+
+
+/* =====================================================
+   MOSTRA ESTADO
+===================================================== */
+
+function selectState(uf) {
+
+    selectedUF =
+        uf;
+
+
+    const name =
+        stateNames[uf] ||
+        uf;
+
+
+    const candidates =
+        stateResults[uf] || [];
+
+
+    $("selectedState")
+        .textContent =
+        name;
+
+
+    if (!candidates.length) {
+
+        $("selectedStateInfo")
+            .textContent =
+            "Dados ainda não disponíveis";
+
+        $("selectedLeader")
+            .textContent =
+            "—";
+
+        $("selectedLeaderPercent")
+            .textContent =
+            "—";
 
         return;
 
     }
 
 
-    candidatesElement.innerHTML =
-        result.candidatos.map((candidate, index) => {
-
-            const color =
-                getColor(index);
+    const leader =
+        candidates[0];
 
 
-            return `
+    $("selectedStateInfo")
+        .textContent =
+        `${numberBR(
+            leader.votos
+        )} votos do líder`;
+
+
+    $("selectedLeader")
+        .textContent =
+        leader.nome;
+
+
+    $("selectedLeaderPercent")
+        .textContent =
+        percentBR(
+            leader.percentual
+        );
+
+}
+
+
+/* =====================================================
+   RANKING NACIONAL
+===================================================== */
+
+function renderCandidates() {
+
+    const container =
+        $("candidates");
+
+
+    if (
+        !nationalCandidates.length
+    ) {
+
+        container.innerHTML = `
+            <div class="panel-subtitle">
+                Nenhum dado encontrado.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        nationalCandidates.map(
+            (candidate, index) => {
+
+                const color =
+                    candidateColor(
+                        index
+                    );
+
+
+                return `
 
                 <div class="candidate">
 
                     <div class="candidate-top">
 
-                        <div class="candidate-info">
+                        <div class="candidate-left">
 
                             <div class="position">
                                 ${index + 1}
@@ -823,7 +1988,7 @@ function render(data) {
                                         135deg,
                                         ${color},
                                         #0f172a
-                                    );
+                                    )
                                 "
                             >
                                 ${escapeHTML(
@@ -833,7 +1998,7 @@ function render(data) {
                                 )}
                             </div>
 
-                            <div>
+                            <div class="candidate-text">
 
                                 <div class="candidate-name">
                                     ${escapeHTML(
@@ -845,12 +2010,14 @@ function render(data) {
                                     ${escapeHTML(
                                         candidate.partido
                                     )}
-                                    ${candidate.numero
-                                        ? " • " +
-                                          escapeHTML(
-                                              candidate.numero
-                                          )
-                                        : ""}
+                                    ${
+                                        candidate.numero
+                                            ? " • " +
+                                              escapeHTML(
+                                                  candidate.numero
+                                              )
+                                            : ""
+                                    }
                                 </div>
 
                             </div>
@@ -859,10 +2026,12 @@ function render(data) {
 
 
                         <div
-                            class="percentage"
-                            style="color:${color}"
+                            class="candidate-percent"
+                            style="
+                                color:${color}
+                            "
                         >
-                            ${percentageBR(
+                            ${percentBR(
                                 candidate.percentual
                             )}
                         </div>
@@ -870,22 +2039,19 @@ function render(data) {
                     </div>
 
 
-                    <div class="bar">
+                    <div class="progress">
 
                         <div
-                            class="bar-fill"
+                            class="progress-fill"
                             style="
                                 width:
-                                ${Math.min(
-                                    candidate.percentual,
-                                    100
-                                )}%;
+                                ${candidate.percentual}%;
 
                                 background:
                                 linear-gradient(
                                     90deg,
                                     ${color},
-                                    ${color}55
+                                    ${color}77
                                 );
                             "
                         ></div>
@@ -893,16 +2059,17 @@ function render(data) {
                     </div>
 
 
-                    <div class="candidate-meta">
+                    <div class="candidate-bottom">
 
                         <span>
                             ${numberBR(
                                 candidate.votos
-                            )} votos
+                            )}
+                            votos
                         </span>
 
                         <span>
-                            ${percentageBR(
+                            ${percentBR(
                                 candidate.percentual
                             )}
                         </span>
@@ -911,137 +2078,545 @@ function render(data) {
 
                 </div>
 
-            `;
+                `;
 
-        }).join("");
-
-
-    /*
-     RANKING
-    */
-
-    rankingElement.innerHTML =
-        result.candidatos.map((candidate, index) => {
-
-            return `
-
-                <div class="ranking-item">
-
-                    <div class="rank-number">
-                        ${index + 1}
-                    </div>
-
-                    <div class="rank-info">
-
-                        <div class="rank-name">
-                            ${escapeHTML(
-                                candidate.nome
-                            )}
-                        </div>
-
-                        <div class="rank-votes">
-                            ${numberBR(
-                                candidate.votos
-                            )}
-                            votos
-                        </div>
-
-                    </div>
-
-                    <div class="rank-percent">
-
-                        ${percentageBR(
-                            candidate.percentual
-                        )}
-
-                    </div>
-
-                </div>
-
-            `;
-
-        }).join("");
+            }
+        ).join("");
 
 }
 
 
-/*
-=========================================================
- BUSCAR TSE
-=========================================================
-*/
+/* =====================================================
+   RANKING
+===================================================== */
 
-async function loadResults() {
+function renderRanking() {
 
-    try {
+    $("ranking").innerHTML =
+        nationalCandidates
+            .map(
+                (candidate, index) => {
 
-        console.log(
-            "Consultando resultados oficiais..."
+                    return `
+
+                    <div class="rank">
+
+                        <div class="rank-number">
+                            ${index + 1}
+                        </div>
+
+                        <div class="rank-main">
+
+                            <div class="rank-name">
+                                ${escapeHTML(
+                                    candidate.nome
+                                )}
+                            </div>
+
+                            <div class="rank-votes">
+                                ${numberBR(
+                                    candidate.votos
+                                )}
+                                votos
+                            </div>
+
+                        </div>
+
+                        <div class="rank-percent">
+
+                            ${percentBR(
+                                candidate.percentual
+                            )}
+
+                        </div>
+
+                    </div>
+
+                    `;
+
+                }
+            )
+            .join("");
+
+}
+
+
+/* =====================================================
+   LISTA DE ESTADOS
+===================================================== */
+
+function renderStateList() {
+
+    const container =
+        $("stateList");
+
+
+    const rows =
+        Object.entries(
+            stateResults
+        )
+        .map(
+            ([uf, candidates]) => {
+
+                if (
+                    !candidates ||
+                    !candidates.length
+                ) {
+
+                    return null;
+
+                }
+
+
+                const leader =
+                    candidates[0];
+
+
+                const index =
+                    nationalCandidates.findIndex(
+                        candidate =>
+                            candidate.numero ===
+                            leader.numero
+                    );
+
+
+                return {
+
+                    uf,
+
+                    name:
+                        stateNames[uf] ||
+                        uf,
+
+                    leader,
+
+                    index
+
+                };
+
+            }
+        )
+        .filter(Boolean);
+
+
+    rows.sort(
+        (a, b) =>
+            a.name.localeCompare(
+                b.name,
+                "pt-BR"
+            )
+    );
+
+
+    container.innerHTML =
+        rows.map(
+            row => {
+
+                const color =
+                    candidateColor(
+                        Math.max(
+                            row.index,
+                            0
+                        )
+                    );
+
+
+                return `
+
+                    <div
+                        class="state-row"
+                        onclick="
+                            selectState('${row.uf}')
+                        "
+                        style="cursor:pointer"
+                    >
+
+                        <div
+                            class="state-dot"
+                            style="
+                                background:${color}
+                            "
+                        ></div>
+
+                        <div class="state-name">
+                            ${escapeHTML(
+                                row.name
+                            )}
+                        </div>
+
+                        <div
+                            class="state-leader"
+                            style="
+                                color:${color}
+                            "
+                        >
+                            ${escapeHTML(
+                                row.leader.nome
+                            )}
+                        </div>
+
+                        <div class="state-percent">
+                            ${percentBR(
+                                row.leader.percentual
+                            )}
+                        </div>
+
+                    </div>
+
+                `;
+
+            }
+        )
+        .join("");
+
+}
+
+
+/* =====================================================
+   BUSCA RESULTADO NACIONAL
+===================================================== */
+
+async function loadNational() {
+
+    const url =
+        TSE_URL +
+        "?t=" +
+        Date.now();
+
+
+    const response =
+        await fetch(
+            url,
+            {
+                cache: "no-store"
+            }
         );
 
 
-        const url =
-            TSE_URL +
-            "?t=" +
-            Date.now();
+    if (!response.ok) {
+
+        throw new Error(
+            "TSE HTTP " +
+            response.status
+        );
+
+    }
 
 
-        const response =
-            await fetch(url, {
+    return response.json();
+
+}
+
+
+/* =====================================================
+   BUSCA RESULTADO DE UMA UF
+===================================================== */
+
+async function loadState(uf) {
+
+    const url =
+        `https://resultados.tse.jus.br/oficial/ele2026/6259/dados/${uf.toLowerCase()}/${uf.toLowerCase()}-c0001-e006259-u.json?t=${Date.now()}`;
+
+
+    /*
+     Presidente pertence à eleição federal.
+     Portanto, para o mapa presidencial,
+     precisamos consultar o arquivo presidencial
+     por UF usando a eleição federal 6257.
+    */
+
+    const federalUrl =
+        `https://resultados.tse.jus.br/oficial/ele2026/6257/dados/${uf.toLowerCase()}/${uf.toLowerCase()}-c0001-e006257-u.json?t=${Date.now()}`;
+
+
+    const response =
+        await fetch(
+            federalUrl,
+            {
                 cache: "no-store"
-            });
+            }
+        );
 
 
-        if (!response.ok) {
+    if (!response.ok) {
 
-            throw new Error(
-                `HTTP ${response.status}`
+        throw new Error(
+            `${uf}: HTTP ${response.status}`
+        );
+
+    }
+
+
+    const data =
+        await response.json();
+
+
+    const candidates =
+        extractCandidates(data);
+
+
+    return candidates;
+
+}
+
+
+/* =====================================================
+   ATUALIZA NACIONAL
+===================================================== */
+
+async function updateNational() {
+
+    try {
+
+        $("resultStatus")
+            .textContent =
+            "atualizando...";
+
+
+        const data =
+            await loadNational();
+
+
+        nationalCandidates =
+            extractCandidates(data);
+
+
+        const sections =
+            extractSections(data);
+
+
+        const totalVotes =
+            nationalCandidates.reduce(
+                (sum, candidate) =>
+                    sum + candidate.votos,
+                0
             );
+
+
+        $("sections")
+            .textContent =
+            numberBR(
+                sections.apuradas
+            );
+
+
+        $("sectionsDetail")
+            .textContent =
+            `${numberBR(
+                sections.total
+            )} no total`;
+
+
+        let percentage =
+            sections.percentual;
+
+
+        /*
+         Se o TSE não mandar o percentual,
+         calculamos.
+        */
+
+        if (
+            !percentage &&
+            sections.total
+        ) {
+
+            percentage =
+                calculatePercent(
+                    sections.apuradas,
+                    sections.total
+                );
 
         }
 
 
-        const data =
-            await response.json();
+        $("totalization")
+            .textContent =
+            percentBR(
+                percentage
+            );
 
 
-        render(data);
+        $("validVotes")
+            .textContent =
+            numberBR(
+                totalVotes
+            );
 
 
-        lastGenerationElement.style.color =
+        $("generation")
+            .textContent =
+            data.hg ||
+            new Date().toLocaleTimeString(
+                "pt-BR"
+            );
+
+
+        $("clock")
+            .textContent =
+            new Date().toLocaleTimeString(
+                "pt-BR"
+            );
+
+
+        $("resultStatus")
+            .textContent =
+            "atualizado";
+
+
+        $("resultStatus")
+            .style.color =
             "#86efac";
 
 
-        console.log(
-            "Atualizado:",
-            new Date().toLocaleTimeString("pt-BR")
-        );
+        renderCandidates();
+
+        renderRanking();
+
+        updateMapColors();
+
+        renderStateList();
 
 
     } catch (error) {
 
         console.error(
-            "Erro ao consultar TSE:",
+            "Erro nacional:",
             error
         );
 
 
-        lastGenerationElement.innerHTML = `
-            <span class="error">
-                Falha ao atualizar
-            </span>
-        `;
+        $("resultStatus")
+            .textContent =
+            "erro ao atualizar";
+
+
+        $("resultStatus")
+            .classList.add(
+                "error"
+            );
 
     }
 
 }
 
 
-/*
-=========================================================
- CONTADOR
-=========================================================
-*/
+/* =====================================================
+   ATUALIZA ESTADOS
+===================================================== */
+
+async function updateStates() {
+
+    /*
+     27 arquivos de uma vez seria pesado.
+     Vamos fazer em grupos.
+    */
+
+    const UFS =
+        Object.keys(
+            stateNames
+        );
+
+
+    const batchSize = 5;
+
+
+    for (
+        let i = 0;
+        i < UFS.length;
+        i += batchSize
+    ) {
+
+        const batch =
+            UFS.slice(
+                i,
+                i + batchSize
+            );
+
+
+        await Promise.all(
+            batch.map(
+                async uf => {
+
+                    try {
+
+                        const candidates =
+                            await loadState(
+                                uf
+                            );
+
+
+                        if (
+                            candidates.length
+                        ) {
+
+                            stateResults[uf] =
+                                candidates;
+
+                        }
+
+                    } catch (error) {
+
+                        /*
+                         Um estado indisponível
+                         não quebra o restante.
+                        */
+
+                        console.warn(
+                            "Estado",
+                            uf,
+                            error.message
+                        );
+
+                    }
+
+                }
+            )
+        );
+
+
+        updateMapColors();
+
+        renderStateList();
+
+    }
+
+}
+
+
+/* =====================================================
+   CICLO COMPLETO
+===================================================== */
+
+async function updateAll() {
+
+    await updateNational();
+
+    /*
+     Atualiza mapa estadual.
+    */
+
+    await updateStates();
+
+    /*
+     Se ainda não houver estado selecionado,
+     mostra o Brasil.
+    */
+
+    if (!selectedUF) {
+
+        $("selectedState")
+            .textContent =
+            "Brasil";
+
+    }
+
+}
+
+
+/* =====================================================
+   CONTADOR
+===================================================== */
 
 function resetCountdown() {
 
@@ -1051,45 +2626,57 @@ function resetCountdown() {
 }
 
 
-setInterval(() => {
+setInterval(
+    () => {
 
-    countdown--;
+        countdown--;
 
-    if (countdown <= 0) {
-        countdown =
-            UPDATE_INTERVAL / 1000;
-    }
+        if (
+            countdown <= 0
+        ) {
 
-    countdownElement.textContent =
-        countdown + "s";
+            countdown =
+                UPDATE_INTERVAL / 1000;
 
-}, 1000);
-
-
-/*
-=========================================================
- PRIMEIRA CONSULTA
-=========================================================
-*/
-
-loadResults();
+        }
 
 
-/*
-=========================================================
- ATUALIZAÇÃO AUTOMÁTICA
-=========================================================
-*/
+        $("countdown")
+            .textContent =
+            countdown + "s";
 
-setInterval(() => {
+    },
+    1000
+);
 
-    loadResults();
 
-    resetCountdown();
+/* =====================================================
+   INÍCIO
+===================================================== */
 
-}, UPDATE_INTERVAL);
+loadMap();
+
+updateAll();
+
+resetCountdown();
+
+
+/* =====================================================
+   ATUALIZAÇÃO AUTOMÁTICA
+===================================================== */
+
+setInterval(
+    () => {
+
+        updateAll();
+
+        resetCountdown();
+
+    },
+    UPDATE_INTERVAL
+);
 
 </script>
-   
+
 </body>
 </html>
