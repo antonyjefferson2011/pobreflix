@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ForgeAI — Construtor de Sites</title>
+    <title>Forge — AI Website Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -15,55 +18,60 @@
     <aside class="sidebar">
 
         <div class="brand">
-            <div class="brand-icon">✦</div>
+            <div class="brand-mark">F</div>
             <div>
-                <strong>ForgeAI</strong>
-                <span>Site Builder</span>
+                <strong>Forge</strong>
+                <span>AI Website Builder</span>
             </div>
         </div>
 
         <button class="new-project" id="newProjectBtn">
             <span>＋</span>
-            Novo projeto
+            Novo site
         </button>
 
         <div class="sidebar-section">
-            <span class="section-title">Projeto atual</span>
+            <div class="sidebar-label">PROJETO</div>
 
             <div class="project-card">
-                <div class="project-icon">◈</div>
-
+                <div class="project-icon">✦</div>
                 <div class="project-info">
                     <strong id="projectName">Meu site</strong>
-                    <span id="saveStatus">Salvo localmente</span>
+                    <span id="projectStatus">Pronto para criar</span>
                 </div>
-
-                <button id="renameProjectBtn" class="icon-btn" title="Renomear">
-                    ⋯
-                </button>
             </div>
         </div>
 
+        <div class="sidebar-section">
+            <div class="sidebar-label">FERRAMENTAS</div>
+
+            <button class="side-button" id="undoBtn">
+                <span>↶</span>
+                Desfazer
+                <kbd>Ctrl Z</kbd>
+            </button>
+
+            <button class="side-button" id="redoBtn">
+                <span>↷</span>
+                Refazer
+                <kbd>Ctrl Y</kbd>
+            </button>
+
+            <button class="side-button" id="improveBtn">
+                <span>✦</span>
+                Melhorar design
+            </button>
+        </div>
+
         <div class="sidebar-bottom">
-
-            <button class="sidebar-action" id="saveBtn">
-                <span>💾</span>
-                Salvar projeto
-            </button>
-
-            <button class="sidebar-action" id="downloadBtn">
-                <span>↓</span>
-                Baixar projeto
-            </button>
-
-            <div class="api-status">
-                <span class="status-dot"></span>
-                <div>
-                    <strong>Groq</strong>
-                    <small id="apiStatus">Não configurada</small>
-                </div>
+            <div class="connection">
+                <span class="connection-dot"></span>
+                <span id="connectionText">API não configurada</span>
             </div>
 
+            <button class="settings-button" id="settingsBtn">
+                ⚙ Configurações
+            </button>
         </div>
 
     </aside>
@@ -75,38 +83,20 @@
         <!-- TOPBAR -->
         <header class="topbar">
 
-            <div class="breadcrumb">
+            <div class="breadcrumbs">
                 <span>Projetos</span>
                 <b>/</b>
                 <strong id="topProjectName">Meu site</strong>
             </div>
 
             <div class="top-actions">
-
-                <div class="device-switcher">
-
-                    <button class="device-btn active" data-device="desktop" title="Desktop">
-                        ▱
-                    </button>
-
-                    <button class="device-btn" data-device="tablet" title="Tablet">
-                        ▯
-                    </button>
-
-                    <button class="device-btn" data-device="mobile" title="Celular">
-                        ▯
-                    </button>
-
-                </div>
-
-                <button class="top-btn" id="refreshPreviewBtn">
-                    ↻
+                <button class="top-button" id="saveBtn">
+                    Salvar
                 </button>
 
-                <button class="publish-btn" id="publishBtn">
-                    Publicar
+                <button class="primary-button" id="downloadBtn">
+                    ↓ Exportar
                 </button>
-
             </div>
 
         </header>
@@ -120,43 +110,66 @@
 
                 <div class="panel-header">
                     <div>
-                        <strong>Construtor IA</strong>
-                        <span>Converse com seu site</span>
+                        <h1>Crie seu site</h1>
+                        <p>Descreva o que você quer. A Forge cuida do resto.</p>
                     </div>
 
-                    <button id="clearChatBtn" class="small-btn">
-                        Limpar
-                    </button>
+                    <div class="ai-status">
+                        <span></span>
+                        IA pronta
+                    </div>
                 </div>
 
 
-                <div class="messages" id="messages">
+                <div class="chat-messages" id="chatMessages">
 
-                    <div class="welcome">
+                    <div class="welcome-card">
 
-                        <div class="welcome-icon">
-                            ✦
-                        </div>
+                        <div class="welcome-icon">✦</div>
 
-                        <h1>O que vamos construir?</h1>
+                        <h2>Que site vamos criar?</h2>
 
                         <p>
-                            Descreva o site que você quer e a IA vai criar
-                            o projeto para você.
+                            Fale normalmente. Você pode começar do zero,
+                            pedir alterações ou melhorar o design.
                         </p>
 
                         <div class="suggestions">
 
-                            <button class="suggestion">
-                                Crie uma landing page moderna para uma loja de tênis
+                            <button class="suggestion"
+                                    data-prompt="Crie um site moderno e premium para uma cafeteria chamada Aurora Coffee, com hero, produtos, sobre nós, depoimentos e contato. Use imagens bonitas de café.">
+                                <span>☕</span>
+                                <div>
+                                    <strong>Cafeteria</strong>
+                                    <small>Site moderno para uma cafeteria</small>
+                                </div>
                             </button>
 
-                            <button class="suggestion">
-                                Crie um site para uma hamburgueria com cardápio
+                            <button class="suggestion"
+                                    data-prompt="Crie uma landing page premium para uma startup de tecnologia chamada NovaFlow. Quero um visual moderno, elegante, com hero, benefícios, números, depoimentos, preços e chamada para ação.">
+                                <span>◈</span>
+                                <div>
+                                    <strong>Startup</strong>
+                                    <small>Landing page profissional</small>
+                                </div>
                             </button>
 
-                            <button class="suggestion">
-                                Crie um portfólio profissional para um programador
+                            <button class="suggestion"
+                                    data-prompt="Crie um site elegante para uma loja de tênis chamada Urban Steps, com hero, produtos, benefícios, depoimentos e chamada para compra. Use fotos reais de tênis.">
+                                <span>◉</span>
+                                <div>
+                                    <strong>Loja</strong>
+                                    <small>E-commerce visual</small>
+                                </div>
+                            </button>
+
+                            <button class="suggestion"
+                                    data-prompt="Crie um portfólio minimalista e elegante para um designer chamado Lucas Martins, com apresentação, trabalhos, serviços, depoimentos e contato.">
+                                <span>✎</span>
+                                <div>
+                                    <strong>Portfólio</strong>
+                                    <small>Design minimalista</small>
+                                </div>
                             </button>
 
                         </div>
@@ -166,25 +179,31 @@
                 </div>
 
 
-                <div class="chat-input-area">
+                <div class="composer">
 
-                    <div class="input-wrapper">
+                    <div class="composer-box">
 
                         <textarea
-                            id="userInput"
-                            placeholder="Descreva o que você quer mudar..."
+                            id="promptInput"
+                            placeholder="Descreva o site que você quer..."
                             rows="1"
                         ></textarea>
 
-                        <button id="sendBtn" class="send-btn">
-                            ↑
-                        </button>
+                        <div class="composer-bottom">
 
-                    </div>
+                            <div class="composer-hints">
+                                <span>Enter para enviar</span>
+                                <span>•</span>
+                                <span>Shift + Enter para nova linha</span>
+                            </div>
 
-                    <div class="input-footer">
-                        <span>Enter para enviar · Shift + Enter para quebrar linha</span>
-                        <span id="tokenInfo"></span>
+                            <button id="sendBtn" class="send-button">
+                                <span>Gerar</span>
+                                <b>↑</b>
+                            </button>
+
+                        </div>
+
                     </div>
 
                 </div>
@@ -195,19 +214,32 @@
             <!-- PREVIEW -->
             <section class="preview-panel">
 
-                <div class="preview-header">
+                <div class="preview-toolbar">
 
                     <div class="preview-title">
                         <span class="live-dot"></span>
-                        Preview
+                        <strong>Visualização</strong>
+                    </div>
+
+                    <div class="device-buttons">
+
+                        <button class="device-button active" data-device="desktop">
+                            ▭
+                        </button>
+
+                        <button class="device-button" data-device="tablet">
+                            ▯
+                        </button>
+
+                        <button class="device-button" data-device="mobile">
+                            ▯
+                        </button>
+
                     </div>
 
                     <div class="preview-actions">
-
-                        <button id="openPreviewBtn" title="Abrir em nova aba">
-                            ↗
-                        </button>
-
+                        <button id="refreshPreview" title="Atualizar">↻</button>
+                        <button id="openPreview" title="Abrir em nova aba">↗</button>
                     </div>
 
                 </div>
@@ -215,7 +247,7 @@
 
                 <div class="preview-area">
 
-                    <div class="browser">
+                    <div class="browser-frame" id="browserFrame">
 
                         <div class="browser-bar">
 
@@ -226,35 +258,18 @@
                             </div>
 
                             <div class="browser-address">
-                                forgeai.local
+                                forge-preview.local
                             </div>
 
                             <div></div>
 
                         </div>
 
-                        <div class="iframe-container" id="iframeContainer">
-
+                        <div class="iframe-wrapper">
                             <iframe
-                                id="previewFrame"
+                                id="preview"
                                 title="Preview do site"
-                                sandbox="allow-scripts allow-forms allow-modals"
                             ></iframe>
-
-                            <div class="empty-preview" id="emptyPreview">
-
-                                <div class="empty-icon">
-                                    ◇
-                                </div>
-
-                                <strong>Seu site aparecerá aqui</strong>
-
-                                <span>
-                                    Descreva sua ideia no chat para começar.
-                                </span>
-
-                            </div>
-
                         </div>
 
                     </div>
@@ -266,55 +281,39 @@
         </section>
 
 
-        <!-- CODE PANEL -->
-        <section class="code-panel">
+        <!-- CODE -->
+        <section class="code-section">
 
             <div class="code-header">
 
-                <div class="code-tabs">
-
-                    <button class="code-tab active" data-file="html">
-                        <span class="file-dot html"></span>
-                        index.html
-                    </button>
-
-                    <button class="code-tab" data-file="css">
-                        <span class="file-dot css"></span>
-                        style.css
-                    </button>
-
-                    <button class="code-tab" data-file="js">
-                        <span class="file-dot js"></span>
-                        script.js
-                    </button>
-
+                <div>
+                    <strong>Código gerado</strong>
+                    <span>Você pode editar manualmente.</span>
                 </div>
 
                 <div class="code-actions">
-
-                    <button id="copyCodeBtn">
-                        Copiar
-                    </button>
-
-                    <button id="formatCodeBtn">
-                        Formatar
-                    </button>
-
+                    <button id="copyCodeBtn">Copiar</button>
                 </div>
 
             </div>
 
-            <div class="editor-wrapper">
+            <div class="code-tabs">
 
-                <div class="line-numbers" id="lineNumbers"></div>
+                <button class="code-tab active" data-file="html">
+                    index.html
+                </button>
 
-                <textarea
-                    id="codeEditor"
-                    spellcheck="false"
-                    autocomplete="off"
-                ></textarea>
+                <button class="code-tab" data-file="css">
+                    style.css
+                </button>
+
+                <button class="code-tab" data-file="js">
+                    script.js
+                </button>
 
             </div>
+
+            <textarea id="codeEditor" spellcheck="false"></textarea>
 
         </section>
 
@@ -324,22 +323,25 @@
 
 
 <!-- API MODAL -->
-<div class="modal-overlay" id="apiModal">
+<div class="modal hidden" id="settingsModal">
 
-    <div class="modal">
+    <div class="modal-backdrop"></div>
 
-        <button class="modal-close" id="closeApiModal">×</button>
+    <div class="modal-card">
 
-        <div class="modal-icon">⚡</div>
+        <button class="modal-close" id="closeSettings">×</button>
 
-        <h2>Configurar Groq</h2>
+        <div class="modal-icon">⚙</div>
+
+        <h2>Configurações</h2>
 
         <p>
-            Coloque sua API Key da Groq para ativar o construtor.
+            A chave fica salva somente neste navegador.
+            Para testes locais isso é suficiente.
         </p>
 
         <label>
-            API Key
+            Groq API Key
             <input
                 type="password"
                 id="apiKeyInput"
@@ -349,22 +351,20 @@
 
         <label>
             Modelo
-            <select id="modelInput">
-                <option value="llama-3.3-70b-versatile">
-                    llama-3.3-70b-versatile
-                </option>
-                <option value="openai/gpt-oss-20b">
-                    openai/gpt-oss-20b
-                </option>
-            </select>
+            <input
+                type="text"
+                id="modelInput"
+                value="llama-3.3-70b-versatile"
+            >
         </label>
 
-        <button class="modal-primary" id="saveApiBtn">
-            Conectar Groq
+        <button class="primary-button full" id="saveSettings">
+            Salvar configurações
         </button>
 
         <small>
-            A chave fica somente no armazenamento local deste navegador.
+            Não coloque uma API key real em um site público.
+            Para produção, use um backend.
         </small>
 
     </div>
@@ -372,9 +372,7 @@
 </div>
 
 
-<!-- TOAST -->
-<div id="toast" class="toast"></div>
-
+<div class="toast" id="toast"></div>
 
 <script src="script.js"></script>
 
