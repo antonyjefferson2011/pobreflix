@@ -1,51 +1,382 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Captura de Localização</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ForgeAI — Construtor de Sites</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <h2>Capturando sua localização...</h2>
-  <p id="aviso">Por favor, permita o acesso à sua localização.</p>
 
-  <script>
-    // Cole aqui a URL que você copiou do Apps Script
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBAh2SlMTZSa11bZHUMw3Je03i4OXf5vVMYIKbijbwNDCexfdQ56F5IrWkFBSXBtEz/exec";
+<div class="app">
 
-    function enviarLocalizacao() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          function(position) {
-            const dados = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            };
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-            // Envia os dados para o Apps Script
-            fetch(SCRIPT_URL, {
-              method: "POST",
-              mode: "no-cors", // Necessário para contornar problemas de CORS no Apps Script
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(dados)
-            })
-            .then(() => {
-              document.getElementById("aviso").innerText = "✅ Localização enviada com sucesso!";
-            })
-            .catch(error => {
-              document.getElementById("aviso").innerText = "Erro ao enviar: " + error;
-            });
-          },
-          function(error) {
-            document.getElementById("aviso").innerText = "Erro ao obter localização: " + error.message;
-          }
-        );
-      } else {
-        document.getElementById("aviso").innerText = "Geolocalização não é suportada por este navegador.";
-      }
-    }
+        <div class="brand">
+            <div class="brand-icon">✦</div>
+            <div>
+                <strong>ForgeAI</strong>
+                <span>Site Builder</span>
+            </div>
+        </div>
 
-    // Chama a função assim que a página carregar
-    window.onload = enviarLocalizacao;
-  </script>
+        <button class="new-project" id="newProjectBtn">
+            <span>＋</span>
+            Novo projeto
+        </button>
+
+        <div class="sidebar-section">
+            <span class="section-title">Projeto atual</span>
+
+            <div class="project-card">
+                <div class="project-icon">◈</div>
+
+                <div class="project-info">
+                    <strong id="projectName">Meu site</strong>
+                    <span id="saveStatus">Salvo localmente</span>
+                </div>
+
+                <button id="renameProjectBtn" class="icon-btn" title="Renomear">
+                    ⋯
+                </button>
+            </div>
+        </div>
+
+        <div class="sidebar-bottom">
+
+            <button class="sidebar-action" id="saveBtn">
+                <span>💾</span>
+                Salvar projeto
+            </button>
+
+            <button class="sidebar-action" id="downloadBtn">
+                <span>↓</span>
+                Baixar projeto
+            </button>
+
+            <div class="api-status">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>Groq</strong>
+                    <small id="apiStatus">Não configurada</small>
+                </div>
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="breadcrumb">
+                <span>Projetos</span>
+                <b>/</b>
+                <strong id="topProjectName">Meu site</strong>
+            </div>
+
+            <div class="top-actions">
+
+                <div class="device-switcher">
+
+                    <button class="device-btn active" data-device="desktop" title="Desktop">
+                        ▱
+                    </button>
+
+                    <button class="device-btn" data-device="tablet" title="Tablet">
+                        ▯
+                    </button>
+
+                    <button class="device-btn" data-device="mobile" title="Celular">
+                        ▯
+                    </button>
+
+                </div>
+
+                <button class="top-btn" id="refreshPreviewBtn">
+                    ↻
+                </button>
+
+                <button class="publish-btn" id="publishBtn">
+                    Publicar
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- WORKSPACE -->
+        <section class="workspace">
+
+            <!-- CHAT -->
+            <section class="chat-panel">
+
+                <div class="panel-header">
+                    <div>
+                        <strong>Construtor IA</strong>
+                        <span>Converse com seu site</span>
+                    </div>
+
+                    <button id="clearChatBtn" class="small-btn">
+                        Limpar
+                    </button>
+                </div>
+
+
+                <div class="messages" id="messages">
+
+                    <div class="welcome">
+
+                        <div class="welcome-icon">
+                            ✦
+                        </div>
+
+                        <h1>O que vamos construir?</h1>
+
+                        <p>
+                            Descreva o site que você quer e a IA vai criar
+                            o projeto para você.
+                        </p>
+
+                        <div class="suggestions">
+
+                            <button class="suggestion">
+                                Crie uma landing page moderna para uma loja de tênis
+                            </button>
+
+                            <button class="suggestion">
+                                Crie um site para uma hamburgueria com cardápio
+                            </button>
+
+                            <button class="suggestion">
+                                Crie um portfólio profissional para um programador
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="chat-input-area">
+
+                    <div class="input-wrapper">
+
+                        <textarea
+                            id="userInput"
+                            placeholder="Descreva o que você quer mudar..."
+                            rows="1"
+                        ></textarea>
+
+                        <button id="sendBtn" class="send-btn">
+                            ↑
+                        </button>
+
+                    </div>
+
+                    <div class="input-footer">
+                        <span>Enter para enviar · Shift + Enter para quebrar linha</span>
+                        <span id="tokenInfo"></span>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- PREVIEW -->
+            <section class="preview-panel">
+
+                <div class="preview-header">
+
+                    <div class="preview-title">
+                        <span class="live-dot"></span>
+                        Preview
+                    </div>
+
+                    <div class="preview-actions">
+
+                        <button id="openPreviewBtn" title="Abrir em nova aba">
+                            ↗
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="preview-area">
+
+                    <div class="browser">
+
+                        <div class="browser-bar">
+
+                            <div class="browser-dots">
+                                <i></i>
+                                <i></i>
+                                <i></i>
+                            </div>
+
+                            <div class="browser-address">
+                                forgeai.local
+                            </div>
+
+                            <div></div>
+
+                        </div>
+
+                        <div class="iframe-container" id="iframeContainer">
+
+                            <iframe
+                                id="previewFrame"
+                                title="Preview do site"
+                                sandbox="allow-scripts allow-forms allow-modals"
+                            ></iframe>
+
+                            <div class="empty-preview" id="emptyPreview">
+
+                                <div class="empty-icon">
+                                    ◇
+                                </div>
+
+                                <strong>Seu site aparecerá aqui</strong>
+
+                                <span>
+                                    Descreva sua ideia no chat para começar.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </section>
+
+
+        <!-- CODE PANEL -->
+        <section class="code-panel">
+
+            <div class="code-header">
+
+                <div class="code-tabs">
+
+                    <button class="code-tab active" data-file="html">
+                        <span class="file-dot html"></span>
+                        index.html
+                    </button>
+
+                    <button class="code-tab" data-file="css">
+                        <span class="file-dot css"></span>
+                        style.css
+                    </button>
+
+                    <button class="code-tab" data-file="js">
+                        <span class="file-dot js"></span>
+                        script.js
+                    </button>
+
+                </div>
+
+                <div class="code-actions">
+
+                    <button id="copyCodeBtn">
+                        Copiar
+                    </button>
+
+                    <button id="formatCodeBtn">
+                        Formatar
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="editor-wrapper">
+
+                <div class="line-numbers" id="lineNumbers"></div>
+
+                <textarea
+                    id="codeEditor"
+                    spellcheck="false"
+                    autocomplete="off"
+                ></textarea>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- API MODAL -->
+<div class="modal-overlay" id="apiModal">
+
+    <div class="modal">
+
+        <button class="modal-close" id="closeApiModal">×</button>
+
+        <div class="modal-icon">⚡</div>
+
+        <h2>Configurar Groq</h2>
+
+        <p>
+            Coloque sua API Key da Groq para ativar o construtor.
+        </p>
+
+        <label>
+            API Key
+            <input
+                type="password"
+                id="apiKeyInput"
+                placeholder="gsk_..."
+            >
+        </label>
+
+        <label>
+            Modelo
+            <select id="modelInput">
+                <option value="llama-3.3-70b-versatile">
+                    llama-3.3-70b-versatile
+                </option>
+                <option value="openai/gpt-oss-20b">
+                    openai/gpt-oss-20b
+                </option>
+            </select>
+        </label>
+
+        <button class="modal-primary" id="saveApiBtn">
+            Conectar Groq
+        </button>
+
+        <small>
+            A chave fica somente no armazenamento local deste navegador.
+        </small>
+
+    </div>
+
+</div>
+
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+
+<script src="script.js"></script>
+
 </body>
 </html>
