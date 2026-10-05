@@ -1,38 +1,323 @@
 "use strict";
 
 /* =========================================================
-   FORGE AI — SCRIPT.JS
-   Gerador de sites com Groq
-========================================================= */
+   FORGE — AI WEBSITE BUILDER
+   Compatível com o index.html atual
+   ========================================================= */
 
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
-/* =========================================================
-   CONFIGURAÇÕES
-========================================================= */
+const STORAGE = {
+    apiKey: "forge_groq_api_key",
+    model: "forge_groq_model",
+    project: "forge_project",
+    history: "forge_history"
+};
 
-const GROQ_URL =
-    "https://api.groq.com/openai/v1/chat/completions";
-
-const DEFAULT_MODEL =
-    "llama-3.3-70b-versatile";
-
-const PROJECT_STORAGE =
-    "forge_ai_v2_project";
-
-const API_STORAGE =
-    "forge_ai_groq_key";
-
+const DEFAULT_MODEL = "llama-3.3-70b-versatile";
 
 /* =========================================================
-   HELPERS
-========================================================= */
+   FONTES
+   ========================================================= */
 
-const $ = (selector) =>
-    document.querySelector(selector);
+const FONT_LIBRARY = [
+    "Inter",
+    "Plus Jakarta Sans",
+    "Poppins",
+    "Montserrat",
+    "DM Sans",
+    "Manrope",
+    "Space Grotesk",
+    "Playfair Display",
+    "Cormorant Garamond",
+    "Roboto",
+    "Outfit"
+];
 
-const $$ = (selector) =>
-    Array.from(document.querySelectorAll(selector));
+/* =========================================================
+   IMAGENS
+   ========================================================= */
 
+const IMAGE_LIBRARY = [
+    "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1559028012-481c04fa702d?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1600&q=85",
+    "https://images.unsplash.com/photo-1503602642458-232111445657?auto=format&fit=crop&w=1600&q=85"
+];
+
+/* =========================================================
+   ELEMENTOS DO HTML
+   ========================================================= */
+
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+const els = {
+    newProjectBtn: $("#newProjectBtn"),
+    projectName: $("#projectName"),
+    projectStatus: $("#projectStatus"),
+
+    undoBtn: $("#undoBtn"),
+    redoBtn: $("#redoBtn"),
+    improveBtn: $("#improveBtn"),
+
+    connectionText: $("#connectionText"),
+    connectionDot: $(".connection-dot"),
+    settingsBtn: $("#settingsBtn"),
+
+    topProjectName: $("#topProjectName"),
+    saveBtn: $("#saveBtn"),
+    downloadBtn: $("#downloadBtn"),
+
+    chatMessages: $("#chatMessages"),
+    promptInput: $("#promptInput"),
+    sendBtn: $("#sendBtn"),
+
+    browserFrame: $("#browserFrame"),
+    preview: $("#preview"),
+    refreshPreview: $("#refreshPreview"),
+    openPreview: $("#openPreview"),
+
+    copyCodeBtn: $("#copyCodeBtn"),
+    codeEditor: $("#codeEditor"),
+    codeTabs: $$(".code-tab"),
+
+    settingsModal: $("#settingsModal"),
+    closeSettings: $("#closeSettings"),
+    apiKeyInput: $("#apiKeyInput"),
+    modelInput: $("#modelInput"),
+    saveSettings: $("#saveSettings"),
+
+    toast: $("#toast")
+};
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+
+function createEmptySpec() {
+    return {
+        projectName: "Meu site",
+
+        theme: {
+            primary: "#635BFF",
+            secondary: "#8B5CF6",
+            background: "#FFFFFF",
+            surface: "#F7F7FA",
+            text: "#111318",
+            muted: "#6B7280",
+            font: "Inter",
+            radius: "20px",
+            style: "modern"
+        },
+
+        nav: {
+            brand: "Meu site",
+            links: [
+                { label: "Início", href: "#inicio" },
+                { label: "Sobre", href: "#sobre" },
+                { label: "Serviços", href: "#servicos" },
+                { label: "Contato", href: "#contato" }
+            ],
+            cta: "Começar"
+        },
+
+        hero: {
+            eyebrow: "SEJA BEM-VINDO",
+            title: "Um site bonito para sua ideia.",
+            description: "Uma experiência moderna, elegante e feita para apresentar seu negócio.",
+            primaryButton: "Começar agora",
+            secondaryButton: "Saiba mais",
+            image: IMAGE_LIBRARY[0]
+        },
+
+        features: [
+            {
+                icon: "✦",
+                title: "Design moderno",
+                description: "Visual limpo, profissional e pensado para causar uma boa primeira impressão."
+            },
+            {
+                icon: "⚡",
+                title: "Rápido",
+                description: "Estrutura leve e responsiva para funcionar bem em qualquer dispositivo."
+            },
+            {
+                icon: "✓",
+                title: "Experiência simples",
+                description: "Tudo organizado para que seus visitantes encontrem o que precisam."
+            }
+        ],
+
+        about: {
+            title: "Feito para destacar o que realmente importa.",
+            description: "Conte aqui a história da sua marca, empresa ou projeto de maneira clara e envolvente.",
+            image: IMAGE_LIBRARY[1]
+        },
+
+        stats: [
+            { number: "10+", label: "Anos de experiência" },
+            { number: "500+", label: "Clientes" },
+            { number: "98%", label: "Satisfação" },
+            { number: "24h", label: "Suporte" }
+        ],
+
+        services: [
+            {
+                title: "Estratégia",
+                description: "Planejamento pensado para transformar ideias em resultados.",
+                icon: "◎"
+            },
+            {
+                title: "Design",
+                description: "Experiências visuais modernas e memoráveis.",
+                icon: "◈"
+            },
+            {
+                title: "Tecnologia",
+                description: "Soluções digitais rápidas, funcionais e escaláveis.",
+                icon: "⌘"
+            }
+        ],
+
+        products: [
+            {
+                name: "Produto Premium",
+                description: "Uma solução criada para quem busca qualidade.",
+                price: "R$ 99",
+                image: IMAGE_LIBRARY[2]
+            },
+            {
+                name: "Produto Essencial",
+                description: "Tudo o que você precisa para começar.",
+                price: "R$ 59",
+                image: IMAGE_LIBRARY[3]
+            },
+            {
+                name: "Produto Pro",
+                description: "Mais recursos para resultados ainda melhores.",
+                price: "R$ 149",
+                image: IMAGE_LIBRARY[4]
+            }
+        ],
+
+        pricing: [
+            {
+                name: "Essencial",
+                price: "R$ 49",
+                description: "Para começar.",
+                features: ["Recurso 1", "Recurso 2", "Suporte"]
+            },
+            {
+                name: "Profissional",
+                price: "R$ 99",
+                description: "Para quem quer mais.",
+                featured: true,
+                features: ["Tudo do Essencial", "Recurso 3", "Recurso 4", "Suporte prioritário"]
+            },
+            {
+                name: "Premium",
+                price: "R$ 199",
+                description: "Para resultados avançados.",
+                features: ["Tudo do Profissional", "Recursos avançados", "Suporte VIP"]
+            }
+        ],
+
+        testimonials: [
+            {
+                name: "Marina Silva",
+                role: "Cliente",
+                text: "O resultado ficou muito melhor do que eu imaginava. O site transmite exatamente a imagem que eu queria."
+            },
+            {
+                name: "Lucas Almeida",
+                role: "Empreendedor",
+                text: "Design bonito, rápido e muito profissional. Foi exatamente o que eu precisava."
+            },
+            {
+                name: "Ana Costa",
+                role: "Cliente",
+                text: "Uma experiência excelente. Tudo ficou simples, elegante e fácil de usar."
+            }
+        ],
+
+        gallery: [
+            IMAGE_LIBRARY[5],
+            IMAGE_LIBRARY[6],
+            IMAGE_LIBRARY[7],
+            IMAGE_LIBRARY[8],
+            IMAGE_LIBRARY[9],
+            IMAGE_LIBRARY[10]
+        ],
+
+        faq: [
+            {
+                question: "Como funciona?",
+                answer: "É simples. Você descreve o que precisa e nossa solução cuida do restante."
+            },
+            {
+                question: "Posso entrar em contato?",
+                answer: "Sim. Use os canais de contato disponíveis nesta página."
+            },
+            {
+                question: "Funciona no celular?",
+                answer: "Sim. O site é totalmente responsivo."
+            }
+        ],
+
+        cta: {
+            title: "Pronto para começar?",
+            description: "Dê o próximo passo e transforme sua ideia em realidade.",
+            button: "Começar agora"
+        },
+
+        contact: {
+            title: "Entre em contato",
+            description: "Tem alguma dúvida? Estamos aqui para ajudar.",
+            email: "contato@exemplo.com",
+            phone: "(11) 99999-9999",
+            address: "São Paulo, SP"
+        },
+
+        footer: {
+            text: "Uma marca criada para fazer a diferença.",
+            copyright: "© 2026 Todos os direitos reservados."
+        }
+    };
+}
+
+let state = {
+    spec: createEmptySpec(),
+
+    files: {
+        html: "",
+        css: "",
+        js: ""
+    },
+
+    history: [],
+    historyIndex: -1,
+
+    activeFile: "html",
+
+    generating: false
+};
+
+/* =========================================================
+   UTILITÁRIOS
+   ========================================================= */
 
 function escapeHTML(value) {
     return String(value ?? "")
@@ -43,723 +328,260 @@ function escapeHTML(value) {
         .replace(/'/g, "&#039;");
 }
 
+function safeURL(url, fallback = "") {
+    if (!url) return fallback;
 
-function normalizeText(value) {
-    return String(value ?? "")
+    try {
+        const parsed = new URL(url, window.location.href);
+
+        if (
+            parsed.protocol === "http:" ||
+            parsed.protocol === "https:" ||
+            parsed.protocol === "data:"
+        ) {
+            return parsed.href;
+        }
+    } catch (_) {}
+
+    return fallback;
+}
+
+function slugify(text) {
+    return String(text || "site")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
-        .trim();
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 40) || "site";
 }
 
-
-function isArray(value) {
-    return Array.isArray(value);
+function clone(value) {
+    return JSON.parse(JSON.stringify(value));
 }
 
+function debounce(fn, delay = 250) {
+    let timer;
 
-/* =========================================================
-   FONTES
-========================================================= */
+    return (...args) => {
+        clearTimeout(timer);
 
-const FONT_LIBRARY = [
-    "Inter",
-    "Plus Jakarta Sans",
-    "Poppins",
-    "Manrope",
-    "DM Sans",
-    "Montserrat",
-    "Space Grotesk",
-    "Outfit",
-    "Raleway",
-    "Playfair Display",
-    "Lora",
-    "Merriweather",
-    "Bebas Neue"
-];
-
-
-/* =========================================================
-   IMAGENS
-========================================================= */
-
-const IMAGE_LIBRARY = {
-    coffee:
-        "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1600&q=85",
-
-    restaurant:
-        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=85",
-
-    food:
-        "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=85",
-
-    burger:
-        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1600&q=85",
-
-    fashion:
-        "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=85",
-
-    sneakers:
-        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1600&q=85",
-
-    store:
-        "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1600&q=85",
-
-    office:
-        "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=85",
-
-    technology:
-        "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=85",
-
-    meeting:
-        "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1600&q=85",
-
-    gym:
-        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1600&q=85",
-
-    fitness:
-        "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1600&q=85",
-
-    portrait:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=1200&q=85",
-
-    woman:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1200&q=85",
-
-    nature:
-        "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85",
-
-    city:
-        "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1600&q=85",
-
-    architecture:
-        "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1600&q=85",
-
-    laptop:
-        "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=1600&q=85",
-
-    product:
-        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1600&q=85",
-
-    skincare:
-        "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1600&q=85",
-
-    travel:
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=85"
-};
-
-
-/* =========================================================
-   SPEC PADRÃO
-========================================================= */
-
-function createEmptySpec() {
-
-    return {
-
-        projectName: "Meu novo site",
-
-        style: "modern",
-
-        theme: {
-            primary: "#635BFF",
-            secondary: "#111827",
-            background: "#FFFFFF",
-            surface: "#F7F8FA",
-            text: "#17191F",
-            muted: "#6B7280",
-            accent: "#8B5CF6"
-        },
-
-        font: "Inter",
-
-        nav: {
-            logo: "Minha Marca",
-
-            links: [
-                {
-                    label: "Início",
-                    href: "#inicio"
-                },
-                {
-                    label: "Sobre",
-                    href: "#sobre"
-                },
-                {
-                    label: "Serviços",
-                    href: "#servicos"
-                },
-                {
-                    label: "Contato",
-                    href: "#contato"
-                }
-            ],
-
-            button: "Fale conosco"
-        },
-
-        hero: {
-            eyebrow: "FEITO PARA VOCÊ",
-
-            title:
-                "Crie algo incrível.",
-
-            description:
-                "Uma experiência digital moderna, elegante e feita para destacar sua marca.",
-
-            primaryButton:
-                "Começar agora",
-
-            secondaryButton:
-                "Conhecer mais",
-
-            image:
-                IMAGE_LIBRARY.technology
-        },
-
-        sections: [
-
-            {
-                type: "features",
-
-                title:
-                    "Tudo que você precisa",
-
-                description:
-                    "Uma solução simples, bonita e eficiente.",
-
-                items: [
-                    {
-                        icon: "✦",
-                        title: "Design moderno",
-                        text:
-                            "Uma interface pensada para impressionar."
-                    },
-                    {
-                        icon: "⚡",
-                        title: "Rápido",
-                        text:
-                            "Experiência leve e rápida em qualquer dispositivo."
-                    },
-                    {
-                        icon: "✓",
-                        title: "Confiável",
-                        text:
-                            "Construído com atenção em cada detalhe."
-                    }
-                ]
-            },
-
-            {
-                type: "about",
-
-                title:
-                    "Feito para crescer com você",
-
-                description:
-                    "Apresente sua empresa, projeto ou ideia de uma maneira profissional.",
-
-                image:
-                    IMAGE_LIBRARY.office
-            },
-
-            {
-                type: "cta",
-
-                title:
-                    "Pronto para começar?",
-
-                description:
-                    "Vamos transformar sua ideia em algo incrível.",
-
-                button:
-                    "Entrar em contato"
-            }
-        ],
-
-        footer: {
-            text:
-                "© 2026 Minha Marca. Todos os direitos reservados."
-        }
+        timer = setTimeout(() => {
+            fn(...args);
+        }, delay);
     };
 }
 
+function getApiKey() {
+    return localStorage.getItem(STORAGE.apiKey) || "";
+}
 
-/* =========================================================
-   ESTADO
-   IMPORTANTE:
-   Fica DEPOIS de IMAGE_LIBRARY e createEmptySpec.
-========================================================= */
+function getModel() {
+    return localStorage.getItem(STORAGE.model) || DEFAULT_MODEL;
+}
 
-let state = {
+function setStatus(text) {
+    if (els.projectStatus) {
+        els.projectStatus.textContent = text;
+    }
+}
 
-    apiKey:
-        localStorage.getItem(API_STORAGE) || "",
+function setConnection(connected) {
+    if (els.connectionText) {
+        els.connectionText.textContent = connected
+            ? "API configurada"
+            : "API não configurada";
+    }
 
-    model:
-        DEFAULT_MODEL,
+    if (els.connectionDot) {
+        els.connectionDot.style.opacity = connected ? "1" : ".45";
+    }
+}
 
-    spec:
-        createEmptySpec(),
+function showToast(message) {
+    if (!els.toast) return;
 
-    files: {
-        html: "",
-        css: "",
-        js: ""
-    },
+    els.toast.textContent = message;
+    els.toast.classList.add("show");
 
-    activeCodeTab:
-        "html",
+    clearTimeout(showToast.timer);
 
-    history: [],
-
-    historyIndex:
-        -1,
-
-    loading:
-        false
-};
-
+    showToast.timer = setTimeout(() => {
+        els.toast.classList.remove("show");
+    }, 2600);
+}
 
 /* =========================================================
    INTENÇÃO DO USUÁRIO
-========================================================= */
+   ========================================================= */
 
-function detectIntent(text) {
+function detectIntent(prompt) {
+    const text = String(prompt || "").toLowerCase().trim();
 
-    const value =
-        normalizeText(text);
-
-    const replaceCommands = [
-
+    const newSiteWords = [
         "novo site",
-        "novo projeto",
-        "do zero",
-        "comeca do zero",
-        "comece do zero",
+        "criar outro site",
+        "começar outro",
         "começar do zero",
-        "comecar do zero",
-
-        "apaga tudo",
+        "do zero",
         "apagar tudo",
+        "apaga tudo",
         "apague tudo",
-
-        "refaz tudo",
-        "refazer tudo",
-
-        "recomeca",
-        "recomeça",
-
-        "recria tudo",
-
-        "muda tudo",
-        "troca tudo",
-
-        "quero outro site",
-        "faz outro site",
-        "cria outro site"
-
+        "esquece o site",
+        "esquecer o site",
+        "refazer o site",
+        "recomeçar",
+        "recomecar",
+        "novo projeto"
     ];
 
-    for (const command of replaceCommands) {
-
-        if (
-            value.includes(
-                normalizeText(command)
-            )
-        ) {
-            return "replace";
-        }
+    if (newSiteWords.some(word => text.includes(word))) {
+        return "new";
     }
 
-    return "update";
+    const improveWords = [
+        "melhore",
+        "melhorar",
+        "deixe mais bonito",
+        "deixa mais bonito",
+        "mais profissional",
+        "mais premium",
+        "melhore o design",
+        "melhorar design",
+        "modernize",
+        "modernizar"
+    ];
+
+    if (improveWords.some(word => text.includes(word))) {
+        return "improve";
+    }
+
+    return "edit";
 }
 
-
 /* =========================================================
-   PROMPT DA GROQ
-========================================================= */
+   PROMPT DA IA
+   ========================================================= */
 
-function buildSystemPrompt(mode) {
+function buildSystemPrompt(mode = "edit") {
+    const currentSpec = JSON.stringify(state.spec, null, 2);
 
-    let prompt = `
+    return `
+Você é a inteligência artificial do Forge, um construtor de sites.
 
-Você é um especialista profissional em:
+Sua tarefa é criar ou alterar um SITE COMPLETO.
 
-- UI/UX
-- design de sites
-- branding
-- desenvolvimento web
-- direção de arte
+MODO ATUAL: ${mode}
 
-Você está criando um site para o usuário.
+REGRAS IMPORTANTES:
 
-IMPORTANTE:
+1. Responda SOMENTE com JSON válido.
+2. NÃO use markdown.
+3. NÃO coloque \`\`\`json.
+4. Não escreva explicações fora do JSON.
+5. Preserve partes existentes quando o usuário pedir apenas uma alteração.
+6. Se o usuário pedir um site novo, crie uma identidade completamente nova.
+7. O resultado deve parecer um site profissional feito por um designer.
+8. Use textos reais e específicos para o negócio, evitando "Lorem ipsum".
+9. Escolha cores coerentes.
+10. Escolha uma fonte da lista:
+${FONT_LIBRARY.join(", ")}
+11. Para imagens, use URLs de imagens do Unsplash.
+12. Nunca invente URL de imagem. Use somente URLs do Unsplash ou URLs já presentes.
+13. O site deve funcionar muito bem no celular.
+14. Não crie código HTML, CSS ou JavaScript na resposta.
+15. Você está alterando apenas o JSON da estrutura do site.
 
-Você NÃO deve retornar HTML.
-
-Você NÃO deve retornar CSS.
-
-Você NÃO deve retornar JavaScript.
-
-Você deve retornar SOMENTE JSON válido.
-
-Nunca coloque o JSON dentro de markdown.
-
-Nunca escreva explicações antes ou depois do JSON.
-
-A estrutura obrigatória é:
+ESTRUTURA OBRIGATÓRIA:
 
 {
-    "projectName": "Nome",
-    "style": "modern",
+  "projectName": "Nome do projeto",
 
-    "theme": {
-        "primary": "#635BFF",
-        "secondary": "#111827",
-        "background": "#FFFFFF",
-        "surface": "#F7F8FA",
-        "text": "#17191F",
-        "muted": "#6B7280",
-        "accent": "#8B5CF6"
-    },
-
+  "theme": {
+    "primary": "#635BFF",
+    "secondary": "#8B5CF6",
+    "background": "#FFFFFF",
+    "surface": "#F7F7FA",
+    "text": "#111318",
+    "muted": "#6B7280",
     "font": "Inter",
+    "radius": "20px",
+    "style": "modern"
+  },
 
-    "nav": {
-        "logo": "Marca",
-        "links": [],
-        "button": "Contato"
-    },
+  "nav": {
+    "brand": "Marca",
+    "links": [
+      {"label": "Início", "href": "#inicio"},
+      {"label": "Sobre", "href": "#sobre"},
+      {"label": "Serviços", "href": "#servicos"},
+      {"label": "Contato", "href": "#contato"}
+    ],
+    "cta": "Começar"
+  },
 
-    "hero": {
-        "eyebrow": "TEXTO",
-        "title": "Título",
-        "description": "Descrição",
-        "primaryButton": "Começar",
-        "secondaryButton": "Saiba mais",
-        "image": "URL"
-    },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "description": "",
+    "primaryButton": "",
+    "secondaryButton": "",
+    "image": ""
+  },
 
-    "sections": [],
+  "features": [],
+  "about": {
+    "title": "",
+    "description": "",
+    "image": ""
+  },
 
-    "footer": {
-        "text": "Texto"
-    }
+  "stats": [],
+  "services": [],
+  "products": [],
+  "pricing": [],
+  "testimonials": [],
+  "gallery": [],
+  "faq": [],
+
+  "cta": {
+    "title": "",
+    "description": "",
+    "button": ""
+  },
+
+  "contact": {
+    "title": "",
+    "description": "",
+    "email": "",
+    "phone": "",
+    "address": ""
+  },
+
+  "footer": {
+    "text": "",
+    "copyright": ""
+  }
 }
 
-TIPOS DE SEÇÃO PERMITIDOS:
-
-features
-about
-stats
-products
-services
-pricing
-testimonials
-gallery
-faq
-cta
-contact
-
-FONTES PERMITIDAS:
-
-Inter
-Plus Jakarta Sans
-Poppins
-Manrope
-DM Sans
-Montserrat
-Space Grotesk
-Outfit
-Raleway
-Playfair Display
-Lora
-Merriweather
-Bebas Neue
-
-REGRAS:
-
-1. O site precisa parecer profissional.
-
-2. Não faça uma página cheia de cards.
-
-3. Use bastante espaço em branco.
-
-4. Use hierarquia visual.
-
-5. Use imagens reais quando fizer sentido.
-
-6. Use URLs do Unsplash.
-
-7. Crie textos em português brasileiro.
-
-8. Não use Lorem ipsum.
-
-9. Não repita a mesma seção sem necessidade.
-
-10. Use no máximo 6 itens por lista.
-
-11. Escolha cores coerentes.
-
-12. Escolha uma fonte coerente com o negócio.
-
-13. O site precisa funcionar bem em celular.
-
-14. O conteúdo deve parecer de uma empresa real.
-
-15. Não invente dados absurdos.
-
+JSON ATUAL DO PROJETO:
+${currentSpec}
 `;
-
-    if (mode === "replace") {
-
-        prompt += `
-
-O usuário pediu para criar um NOVO SITE.
-
-Ignore completamente o projeto anterior.
-
-Crie tudo novamente baseado no pedido atual.
-
-`;
-
-    } else {
-
-        prompt += `
-
-O usuário quer MODIFICAR o site atual.
-
-Mantenha o que ainda fizer sentido.
-
-Faça as alterações solicitadas.
-
-`;
-
-    }
-
-    return prompt;
 }
-
 
 /* =========================================================
-   CHAMAR GROQ
-========================================================= */
-
-async function callGroq(
-    userPrompt,
-    currentSpec,
-    mode
-) {
-
-    if (!state.apiKey) {
-        throw new Error(
-            "Configure sua API Key da Groq primeiro."
-        );
-    }
-
-    const body = {
-
-        model:
-            state.model,
-
-        messages: [
-
-            {
-                role: "system",
-
-                content:
-                    buildSystemPrompt(mode)
-            },
-
-            {
-                role: "user",
-
-                content:
-                    "SITE ATUAL:\n\n" +
-                    JSON.stringify(
-                        currentSpec,
-                        null,
-                        2
-                    ) +
-
-                    "\n\nPEDIDO DO USUÁRIO:\n\n" +
-                    userPrompt
-            }
-
-        ],
-
-        temperature:
-            0.7,
-
-        max_tokens:
-            7000
-    };
-
-
-    const response =
-        await fetch(
-            GROQ_URL,
-            {
-                method: "POST",
-
-                headers: {
-                    "Content-Type":
-                        "application/json",
-
-                    "Authorization":
-                        "Bearer " +
-                        state.apiKey
-                },
-
-                body:
-                    JSON.stringify(body)
-            }
-        );
-
-
-    if (!response.ok) {
-
-        let message =
-            "Erro desconhecido.";
-
-        try {
-
-            const data =
-                await response.json();
-
-            message =
-                data?.error?.message ||
-                JSON.stringify(data);
-
-        } catch {
-
-            message =
-                await response.text();
-        }
-
-        throw new Error(
-            "Groq " +
-            response.status +
-            ": " +
-            message
-        );
-    }
-
-
-    const data =
-        await response.json();
-
-
-    const content =
-        data?.choices?.[0]?.message?.content;
-
-
-    if (!content) {
-
-        throw new Error(
-            "A Groq não retornou conteúdo."
-        );
-    }
-
-
-    return content;
-}
-
-
-/* =========================================================
-   PARSER JSON
-========================================================= */
-
-function parseJSON(text) {
-
-    if (!text) {
-        throw new Error(
-            "A IA retornou uma resposta vazia."
-        );
-    }
-
-    let value =
-        String(text).trim();
-
-
-    value =
-        value
-            .replace(/^```json\s*/i, "")
-            .replace(/^```\s*/i, "")
-            .replace(/\s*```$/i, "")
-            .trim();
-
-
-    try {
-        return JSON.parse(value);
-
-    } catch {
-
-        const first =
-            value.indexOf("{");
-
-        const last =
-            value.lastIndexOf("}");
-
-
-        if (
-            first === -1 ||
-            last === -1 ||
-            last <= first
-        ) {
-
-            throw new Error(
-                "A IA não retornou um JSON válido."
-            );
-        }
-
-
-        const extracted =
-            value.slice(
-                first,
-                last + 1
-            );
-
-
-        try {
-
-            return JSON.parse(
-                extracted
-            );
-
-        } catch {
-
-            throw new Error(
-                "A IA retornou um JSON inválido."
-            );
-        }
-    }
-}
-
-
-/* =========================================================
-   NORMALIZAR SPEC
-========================================================= */
+   NORMALIZAÇÃO DA RESPOSTA
+   ========================================================= */
 
 function normalizeSpec(input) {
+    const base = createEmptySpec();
 
-    const base =
-        createEmptySpec();
-
-
-    if (
-        !input ||
-        typeof input !== "object"
-    ) {
+    if (!input || typeof input !== "object") {
         return base;
     }
 
-
-    const result = {
-
+    const output = {
         ...base,
-
         ...input,
 
         theme: {
@@ -777,5195 +599,2749 @@ function normalizeSpec(input) {
             ...(input.hero || {})
         },
 
+        about: {
+            ...base.about,
+            ...(input.about || {})
+        },
+
+        cta: {
+            ...base.cta,
+            ...(input.cta || {})
+        },
+
+        contact: {
+            ...base.contact,
+            ...(input.contact || {})
+        },
+
         footer: {
             ...base.footer,
             ...(input.footer || {})
         }
     };
 
-
-    if (
-        !FONT_LIBRARY.includes(
-            result.font
-        )
-    ) {
-        result.font =
-            "Inter";
+    if (!Array.isArray(output.features) || !output.features.length) {
+        output.features = base.features;
     }
 
-
-    if (
-        !isArray(
-            result.nav.links
-        )
-    ) {
-        result.nav.links =
-            base.nav.links;
+    if (!Array.isArray(output.stats) || !output.stats.length) {
+        output.stats = base.stats;
     }
 
-
-    if (
-        !isArray(
-            result.sections
-        )
-    ) {
-        result.sections = [];
+    if (!Array.isArray(output.services) || !output.services.length) {
+        output.services = base.services;
     }
 
+    if (!Array.isArray(output.products) || !output.products.length) {
+        output.products = [];
+    }
 
-    result.sections =
-        result.sections.filter(
-            section =>
-                section &&
-                typeof section === "object"
-        );
+    if (!Array.isArray(output.pricing) || !output.pricing.length) {
+        output.pricing = [];
+    }
 
+    if (!Array.isArray(output.testimonials) || !output.testimonials.length) {
+        output.testimonials = base.testimonials;
+    }
 
-    return result;
+    if (!Array.isArray(output.gallery)) {
+        output.gallery = [];
+    }
+
+    if (!Array.isArray(output.faq) || !output.faq.length) {
+        output.faq = base.faq;
+    }
+
+    if (!Array.isArray(output.nav.links) || !output.nav.links.length) {
+        output.nav.links = base.nav.links;
+    }
+
+    output.theme.font = FONT_LIBRARY.includes(output.theme.font)
+        ? output.theme.font
+        : "Inter";
+
+    return output;
 }
 
+function extractJSON(text) {
+    if (!text) {
+        throw new Error("A IA não retornou nada.");
+    }
+
+    let clean = String(text).trim();
+
+    clean = clean
+        .replace(/^```json/i, "")
+        .replace(/^```/i, "")
+        .replace(/```$/i, "")
+        .trim();
+
+    try {
+        return JSON.parse(clean);
+    } catch (_) {}
+
+    const first = clean.indexOf("{");
+    const last = clean.lastIndexOf("}");
+
+    if (first !== -1 && last !== -1 && last > first) {
+        const possible = clean.slice(first, last + 1);
+
+        try {
+            return JSON.parse(possible);
+        } catch (_) {}
+    }
+
+    throw new Error("A resposta da IA não veio em JSON válido.");
+}
 
 /* =========================================================
-   NAV
-========================================================= */
+   GROQ
+   ========================================================= */
+
+async function askGroq(userPrompt, mode = "edit") {
+    const apiKey = getApiKey();
+
+    if (!apiKey) {
+        throw new Error("Configure sua Groq API Key primeiro.");
+    }
+
+    const response = await fetch(GROQ_ENDPOINT, {
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+        },
+
+        body: JSON.stringify({
+            model: getModel(),
+
+            temperature: 0.7,
+
+            max_tokens: 8000,
+
+            messages: [
+                {
+                    role: "system",
+                    content: buildSystemPrompt(mode)
+                },
+                {
+                    role: "user",
+                    content: userPrompt
+                }
+            ]
+        })
+    });
+
+    let data;
+
+    try {
+        data = await response.json();
+    } catch (_) {
+        throw new Error("A Groq retornou uma resposta inválida.");
+    }
+
+    if (!response.ok) {
+        const message =
+            data?.error?.message ||
+            `Erro da Groq (${response.status}).`;
+
+        throw new Error(message);
+    }
+
+    const content = data?.choices?.[0]?.message?.content;
+
+    if (!content) {
+        throw new Error("A IA não retornou conteúdo.");
+    }
+
+    return extractJSON(content);
+}
+
+/* =========================================================
+   HTML DO SITE GERADO
+   ========================================================= */
 
 function renderNav(spec) {
-
-    const links =
-        isArray(spec.nav.links)
-            ? spec.nav.links
-            : [];
-
+    const links = (spec.nav.links || [])
+        .map(link => `
+            <a href="${escapeHTML(link.href || "#")}">
+                ${escapeHTML(link.label)}
+            </a>
+        `)
+        .join("");
 
     return `
-<header class="site-nav">
-
-    <div class="container nav-inner">
-
-        <a
-            href="#inicio"
-            class="logo"
-        >
-            ${escapeHTML(spec.nav.logo)}
-        </a>
-
-
-        <nav class="desktop-nav">
-
-            ${links.map(link => `
-
-                <a
-                    href="${escapeHTML(
-                        link.href || "#"
-                    )}"
-                >
-                    ${escapeHTML(
-                        link.label || "Link"
-                    )}
+        <header class="site-nav">
+            <div class="container nav-inner">
+                <a class="brand" href="#inicio">
+                    ${escapeHTML(spec.nav.brand)}
                 </a>
 
-            `).join("")}
+                <nav class="nav-links">
+                    ${links}
+                </nav>
 
-        </nav>
+                <a class="nav-cta" href="#contato">
+                    ${escapeHTML(spec.nav.cta)}
+                </a>
 
-
-        <div class="nav-actions">
-
-            <a
-                class="nav-button"
-                href="#contato"
-            >
-                ${escapeHTML(
-                    spec.nav.button ||
-                    "Contato"
-                )}
-            </a>
-
-
-            <button
-                class="mobile-menu-button"
-                type="button"
-                onclick="toggleMenu()"
-            >
-                ☰
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <div
-        class="mobile-menu"
-        id="mobileMenu"
-    >
-
-        ${links.map(link => `
-
-            <a
-                href="${escapeHTML(
-                    link.href || "#"
-                )}"
-                onclick="closeMenu()"
-            >
-                ${escapeHTML(
-                    link.label || "Link"
-                )}
-            </a>
-
-        `).join("")}
-
-        <a
-            href="#contato"
-            onclick="closeMenu()"
-        >
-            ${escapeHTML(
-                spec.nav.button ||
-                "Contato"
-            )}
-        </a>
-
-    </div>
-
-</header>
-`;
+                <button class="mobile-menu" aria-label="Abrir menu">
+                    ☰
+                </button>
+            </div>
+        </header>
+    `;
 }
-
-
-/* =========================================================
-   HERO
-========================================================= */
 
 function renderHero(spec) {
-
-    const hero =
-        spec.hero || {};
-
+    const image = safeURL(
+        spec.hero.image,
+        IMAGE_LIBRARY[0]
+    );
 
     return `
-<section
-    class="hero"
-    id="inicio"
->
+        <section class="hero" id="inicio">
+            <div class="container hero-grid">
 
-    <div class="container hero-grid">
-
-        <div class="hero-content">
-
-            ${
-                hero.eyebrow
-                    ? `
+                <div class="hero-content">
                     <span class="eyebrow">
-                        ${escapeHTML(
-                            hero.eyebrow
-                        )}
+                        ${escapeHTML(spec.hero.eyebrow)}
                     </span>
-                    `
-                    : ""
-            }
 
+                    <h1>
+                        ${escapeHTML(spec.hero.title)}
+                    </h1>
 
-            <h1>
-                ${escapeHTML(
-                    hero.title ||
-                    "Crie algo incrível."
-                )}
-            </h1>
+                    <p>
+                        ${escapeHTML(spec.hero.description)}
+                    </p>
 
-
-            <p>
-                ${escapeHTML(
-                    hero.description || ""
-                )}
-            </p>
-
-
-            <div class="hero-actions">
-
-                <a
-                    href="#contato"
-                    class="button button-primary"
-                >
-                    ${escapeHTML(
-                        hero.primaryButton ||
-                        "Começar"
-                    )}
-                </a>
-
-
-                ${
-                    hero.secondaryButton
-                        ? `
-                        <a
-                            href="#sobre"
-                            class="button button-secondary"
-                        >
-                            ${escapeHTML(
-                                hero.secondaryButton
-                            )}
+                    <div class="hero-actions">
+                        <a class="button button-primary" href="#contato">
+                            ${escapeHTML(spec.hero.primaryButton)}
                         </a>
-                        `
-                        : ""
-                }
 
-            </div>
-
-        </div>
-
-
-        <div class="hero-visual">
-
-            <div class="hero-image-wrap">
-
-                <img
-                    src="${escapeHTML(
-                        hero.image ||
-                        IMAGE_LIBRARY.technology
-                    )}"
-                    alt="${escapeHTML(
-                        spec.projectName
-                    )}"
-                >
-
-            </div>
-
-
-            <div class="floating-card">
-
-                <span class="floating-dot"></span>
-
-                <div>
-
-                    <strong>
-                        Experiência moderna
-                    </strong>
-
-                    <small>
-                        Feita para impressionar
-                    </small>
-
+                        <a class="button button-secondary" href="#sobre">
+                            ${escapeHTML(spec.hero.secondaryButton)}
+                        </a>
+                    </div>
                 </div>
 
-            </div>
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   FEATURES
-========================================================= */
-
-function renderFeatures(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
-
-    return `
-<section
-    class="section features-section"
-    id="servicos"
->
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <div>
-
-                <span class="section-kicker">
-                    DIFERENCIAIS
-                </span>
-
-                <h2>
-                    ${escapeHTML(
-                        section.title ||
-                        "Tudo que você precisa"
-                    )}
-                </h2>
-
-            </div>
-
-
-            <p>
-                ${escapeHTML(
-                    section.description || ""
-                )}
-            </p>
-
-        </div>
-
-
-        <div class="feature-grid">
-
-            ${items.map(
-                (item, index) => `
-
-                <article class="feature-item">
-
-                    <div class="feature-number">
-                        ${String(
-                            index + 1
-                        ).padStart(2, "0")}
-                    </div>
-
-
-                    <div class="feature-icon">
-                        ${escapeHTML(
-                            item.icon || "✦"
-                        )}
-                    </div>
-
-
-                    <h3>
-                        ${escapeHTML(
-                            item.title ||
-                            "Recurso"
-                        )}
-                    </h3>
-
-
-                    <p>
-                        ${escapeHTML(
-                            item.text || ""
-                        )}
-                    </p>
-
-                </article>
-
-            `
-            ).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   ABOUT
-========================================================= */
-
-function renderAbout(section) {
-
-    return `
-<section
-    class="section about-section"
-    id="sobre"
->
-
-    <div class="container about-grid">
-
-        <div class="about-image">
-
-            <img
-                src="${escapeHTML(
-                    section.image ||
-                    IMAGE_LIBRARY.office
-                )}"
-                alt="${escapeHTML(
-                    section.title ||
-                    "Sobre"
-                )}"
-            >
-
-        </div>
-
-
-        <div class="about-content">
-
-            <span class="section-kicker">
-                SOBRE
-            </span>
-
-
-            <h2>
-                ${escapeHTML(
-                    section.title ||
-                    "Feito para crescer com você"
-                )}
-            </h2>
-
-
-            <p>
-                ${escapeHTML(
-                    section.description || ""
-                )}
-            </p>
-
-
-            <a
-                href="#contato"
-                class="text-link"
-            >
-                Saiba mais →
-            </a>
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   STATS
-========================================================= */
-
-function renderStats(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
-
-    return `
-<section class="section stats-section">
-
-    <div class="container">
-
-        <div class="stats-grid">
-
-            ${items.map(item => `
-
-                <div class="stat-item">
-
-                    <strong>
-                        ${escapeHTML(
-                            item.value || "0"
-                        )}
-                    </strong>
-
-                    <span>
-                        ${escapeHTML(
-                            item.label || ""
-                        )}
-                    </span>
-
-                </div>
-
-            `).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   SERVICES
-========================================================= */
-
-function renderServices(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
-
-    return `
-<section class="section">
-
-    <div class="container">
-
-        <div class="section-heading centered">
-
-            <span class="section-kicker">
-                SERVIÇOS
-            </span>
-
-            <h2>
-                ${escapeHTML(
-                    section.title ||
-                    "O que fazemos"
-                )}
-            </h2>
-
-            <p>
-                ${escapeHTML(
-                    section.description || ""
-                )}
-            </p>
-
-        </div>
-
-
-        <div class="service-grid">
-
-            ${items.map(
-                (item, index) => `
-
-                <article class="service-card">
-
-                    <div class="service-top">
-
-                        <span>
-                            ${String(
-                                index + 1
-                            ).padStart(2, "0")}
-                        </span>
-
-                        <span>↗</span>
-
-                    </div>
-
-
-                    <h3>
-                        ${escapeHTML(
-                            item.title ||
-                            "Serviço"
-                        )}
-                    </h3>
-
-
-                    <p>
-                        ${escapeHTML(
-                            item.text || ""
-                        )}
-                    </p>
-
-                </article>
-
-            `
-            ).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   PRODUCTS
-========================================================= */
-
-function renderProducts(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
-
-    return `
-<section class="section">
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <div>
-
-                <span class="section-kicker">
-                    PRODUTOS
-                </span>
-
-                <h2>
-                    ${escapeHTML(
-                        section.title ||
-                        "Mais vendidos"
-                    )}
-                </h2>
-
-            </div>
-
-            <p>
-                ${escapeHTML(
-                    section.description || ""
-                )}
-            </p>
-
-        </div>
-
-
-        <div class="product-grid">
-
-            ${items.map(item => `
-
-                <article class="product-card">
-
-                    ${
-                        item.image
-                            ? `
-                            <div class="product-image">
-
-                                <img
-                                    src="${escapeHTML(
-                                        item.image
-                                    )}"
-                                    alt="${escapeHTML(
-                                        item.title ||
-                                        "Produto"
-                                    )}"
-                                >
-
-                            </div>
-                            `
-                            : ""
-                    }
-
-
-                    <div class="product-content">
-
-                        <h3>
-                            ${escapeHTML(
-                                item.title ||
-                                "Produto"
-                            )}
-                        </h3>
-
-
-                        <p>
-                            ${escapeHTML(
-                                item.text || ""
-                            )}
-                        </p>
-
-
-                        ${
-                            item.price
-                                ? `
-                                <strong class="product-price">
-                                    ${escapeHTML(
-                                        item.price
-                                    )}
-                                </strong>
-                                `
-                                : ""
-                        }
-
-                    </div>
-
-                </article>
-
-            `).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   PRICING
-========================================================= */
-
-function renderPricing(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
-
-    return `
-<section class="section">
-
-    <div class="container">
-
-        <div class="section-heading centered">
-
-            <span class="section-kicker">
-                PLANOS
-            </span>
-
-            <h2>
-                ${escapeHTML(
-                    section.title ||
-                    "Escolha seu plano"
-                )}
-            </h2>
-
-            <p>
-                ${escapeHTML(
-                    section.description || ""
-                )}
-            </p>
-
-        </div>
-
-
-        <div class="pricing-grid">
-
-            ${items.map(
-                (item, index) => `
-
-                <article
-                    class="pricing-card ${
-                        index === 1
-                            ? "featured"
-                            : ""
-                    }"
-                >
-
-                    ${
-                        index === 1
-                            ? `
-                            <div class="popular-badge">
-                                MAIS POPULAR
-                            </div>
-                            `
-                            : ""
-                    }
-
-
-                    <h3>
-                        ${escapeHTML(
-                            item.title ||
-                            "Plano"
-                        )}
-                    </h3>
-
-
-                    <div class="price">
-                        ${escapeHTML(
-                            item.price ||
-                            "R$ 0"
-                        )}
-                    </div>
-
-
-                    <p>
-                        ${escapeHTML(
-                            item.text || ""
-                        )}
-                    </p>
-
-
-                    <a
-                        href="#contato"
-                        class="button ${
-                            index === 1
-                                ? "button-primary"
-                                : "button-secondary"
-                        }"
-                    >
-                        Escolher plano
-                    </a>
-
-                </article>
-
-            `
-            ).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   TESTIMONIALS
-========================================================= */
-
-function renderTestimonials(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
-
-    return `
-<section class="section">
-
-    <div class="container">
-
-        <div class="section-heading centered">
-
-            <span class="section-kicker">
-                CLIENTES
-            </span>
-
-            <h2>
-                ${escapeHTML(
-                    section.title ||
-                    "Quem já confia"
-                )}
-            </h2>
-
-        </div>
-
-
-        <div class="testimonial-grid">
-
-            ${items.map(item => `
-
-                <article class="testimonial-card">
-
-                    <div class="stars">
-                        ★★★★★
-                    </div>
-
-
-                    <p>
-                        “${escapeHTML(
-                            item.text || ""
-                        )}”
-                    </p>
-
-
-                    <div class="testimonial-author">
-
-                        ${
-                            item.image
-                                ? `
-                                <img
-                                    src="${escapeHTML(
-                                        item.image
-                                    )}"
-                                    alt="${escapeHTML(
-                                        item.name ||
-                                        "Cliente"
-                                    )}"
-                                >
-                                `
-                                : `
-                                <div class="avatar">
-                                    ${escapeHTML(
-                                        (
-                                            item.name ||
-                                            "C"
-                                        ).charAt(0)
-                                    )}
-                                </div>
-                                `
-                        }
-
-
-                        <div>
-
-                            <strong>
-                                ${escapeHTML(
-                                    item.name ||
-                                    "Cliente"
-                                )}
-                            </strong>
-
-                            <span>
-                                ${escapeHTML(
-                                    item.role || ""
-                                )}
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </article>
-
-            `).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   GALLERY
-========================================================= */
-
-function renderGallery(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
-
-    return `
-<section class="section">
-
-    <div class="container">
-
-        <div class="section-heading">
-
-            <div>
-
-                <span class="section-kicker">
-                    GALERIA
-                </span>
-
-                <h2>
-                    ${escapeHTML(
-                        section.title ||
-                        "Conheça nosso trabalho"
-                    )}
-                </h2>
-
-            </div>
-
-            <p>
-                ${escapeHTML(
-                    section.description || ""
-                )}
-            </p>
-
-        </div>
-
-
-        <div class="gallery-grid">
-
-            ${items.map(item => `
-
-                <div class="gallery-item">
+                <div class="hero-visual">
+                    <div class="hero-glow"></div>
 
                     <img
-                        src="${escapeHTML(
-                            item.image ||
-                            IMAGE_LIBRARY.city
-                        )}"
-                        alt="${escapeHTML(
-                            item.title ||
-                            "Imagem"
-                        )}"
-                    >
+                        src="${image}"
+                        alt="${escapeHTML(spec.nav.brand)}"
+                        loading="eager"
+                    />
+                </div>
 
+            </div>
+        </section>
+    `;
+}
 
-                    ${
-                        item.title
-                            ? `
-                            <div class="gallery-caption">
-                                ${escapeHTML(
-                                    item.title
-                                )}
+function renderFeatures(spec) {
+    if (!spec.features?.length) return "";
+
+    return `
+        <section class="section features-section">
+            <div class="container">
+
+                <div class="section-heading center">
+                    <span class="eyebrow">POR QUE ESCOLHER</span>
+                    <h2>Feito para entregar uma experiência melhor.</h2>
+                </div>
+
+                <div class="features-grid">
+                    ${spec.features.map(item => `
+                        <article class="feature-card">
+                            <div class="feature-icon">
+                                ${escapeHTML(item.icon || "✦")}
                             </div>
-                            `
-                            : ""
-                    }
+
+                            <h3>
+                                ${escapeHTML(item.title)}
+                            </h3>
+
+                            <p>
+                                ${escapeHTML(item.description)}
+                            </p>
+                        </article>
+                    `).join("")}
+                </div>
+
+            </div>
+        </section>
+    `;
+}
+
+function renderAbout(spec) {
+    const image = safeURL(
+        spec.about.image,
+        IMAGE_LIBRARY[1]
+    );
+
+    return `
+        <section class="section about-section" id="sobre">
+            <div class="container about-grid">
+
+                <div class="about-image">
+                    <img
+                        src="${image}"
+                        alt=""
+                        loading="lazy"
+                    />
+                </div>
+
+                <div class="about-content">
+                    <span class="eyebrow">SOBRE NÓS</span>
+
+                    <h2>
+                        ${escapeHTML(spec.about.title)}
+                    </h2>
+
+                    <p>
+                        ${escapeHTML(spec.about.description)}
+                    </p>
+
+                    <a class="text-link" href="#contato">
+                        Conheça mais
+                        <span>→</span>
+                    </a>
+                </div>
+
+            </div>
+        </section>
+    `;
+}
+
+function renderStats(spec) {
+    if (!spec.stats?.length) return "";
+
+    return `
+        <section class="stats-section">
+            <div class="container stats-grid">
+
+                ${spec.stats.map(item => `
+                    <div class="stat">
+                        <strong>
+                            ${escapeHTML(item.number)}
+                        </strong>
+
+                        <span>
+                            ${escapeHTML(item.label)}
+                        </span>
+                    </div>
+                `).join("")}
+
+            </div>
+        </section>
+    `;
+}
+
+function renderServices(spec) {
+    if (!spec.services?.length) return "";
+
+    return `
+        <section class="section" id="servicos">
+            <div class="container">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">SERVIÇOS</span>
+                        <h2>Como podemos ajudar.</h2>
+                    </div>
+
+                    <p>
+                        Soluções pensadas para transformar suas ideias em algo real.
+                    </p>
+                </div>
+
+                <div class="services-grid">
+                    ${spec.services.map(item => `
+                        <article class="service-card">
+
+                            <div class="service-icon">
+                                ${escapeHTML(item.icon || "✦")}
+                            </div>
+
+                            <h3>
+                                ${escapeHTML(item.title)}
+                            </h3>
+
+                            <p>
+                                ${escapeHTML(item.description)}
+                            </p>
+
+                            <a href="#contato">
+                                Saiba mais →
+                            </a>
+
+                        </article>
+                    `).join("")}
+                </div>
+
+            </div>
+        </section>
+    `;
+}
+
+function renderProducts(spec) {
+    if (!spec.products?.length) return "";
+
+    return `
+        <section class="section products-section">
+            <div class="container">
+
+                <div class="section-heading center">
+                    <span class="eyebrow">PRODUTOS</span>
+                    <h2>Escolha o que combina com você.</h2>
+                </div>
+
+                <div class="products-grid">
+
+                    ${spec.products.map(item => {
+                        const image = safeURL(
+                            item.image,
+                            IMAGE_LIBRARY[2]
+                        );
+
+                        return `
+                            <article class="product-card">
+
+                                <div class="product-image">
+                                    <img
+                                        src="${image}"
+                                        alt="${escapeHTML(item.name)}"
+                                        loading="lazy"
+                                    />
+                                </div>
+
+                                <div class="product-body">
+                                    <h3>
+                                        ${escapeHTML(item.name)}
+                                    </h3>
+
+                                    <p>
+                                        ${escapeHTML(item.description)}
+                                    </p>
+
+                                    <div class="product-bottom">
+                                        <strong>
+                                            ${escapeHTML(item.price)}
+                                        </strong>
+
+                                        <a href="#contato">
+                                            Comprar
+                                        </a>
+                                    </div>
+                                </div>
+
+                            </article>
+                        `;
+                    }).join("")}
+
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+function renderPricing(spec) {
+    if (!spec.pricing?.length) return "";
+
+    return `
+        <section class="section pricing-section">
+            <div class="container">
+
+                <div class="section-heading center">
+                    <span class="eyebrow">PLANOS</span>
+                    <h2>Escolha seu plano.</h2>
+                </div>
+
+                <div class="pricing-grid">
+
+                    ${spec.pricing.map(item => `
+                        <article class="pricing-card ${item.featured ? "featured" : ""}">
+
+                            ${item.featured ? `
+                                <div class="popular-badge">
+                                    Mais escolhido
+                                </div>
+                            ` : ""}
+
+                            <h3>
+                                ${escapeHTML(item.name)}
+                            </h3>
+
+                            <p>
+                                ${escapeHTML(item.description)}
+                            </p>
+
+                            <div class="price">
+                                ${escapeHTML(item.price)}
+                            </div>
+
+                            <ul>
+                                ${(item.features || []).map(feature => `
+                                    <li>
+                                        <span>✓</span>
+                                        ${escapeHTML(feature)}
+                                    </li>
+                                `).join("")}
+                            </ul>
+
+                            <a class="button ${item.featured ? "button-primary" : "button-secondary"}" href="#contato">
+                                Escolher plano
+                            </a>
+
+                        </article>
+                    `).join("")}
+
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+function renderTestimonials(spec) {
+    if (!spec.testimonials?.length) return "";
+
+    return `
+        <section class="section testimonials-section">
+            <div class="container">
+
+                <div class="section-heading center">
+                    <span class="eyebrow">DEPOIMENTOS</span>
+                    <h2>Quem usa, recomenda.</h2>
+                </div>
+
+                <div class="testimonials-grid">
+
+                    ${spec.testimonials.map(item => `
+                        <article class="testimonial-card">
+
+                            <div class="stars">
+                                ★★★★★
+                            </div>
+
+                            <p>
+                                “${escapeHTML(item.text)}”
+                            </p>
+
+                            <div class="testimonial-author">
+                                <div class="avatar">
+                                    ${escapeHTML(
+                                        String(item.name || "A").charAt(0)
+                                    )}
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        ${escapeHTML(item.name)}
+                                    </strong>
+
+                                    <span>
+                                        ${escapeHTML(item.role)}
+                                    </span>
+                                </div>
+                            </div>
+
+                        </article>
+                    `).join("")}
+
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+function renderGallery(spec) {
+    if (!spec.gallery?.length) return "";
+
+    return `
+        <section class="section gallery-section">
+            <div class="container">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="eyebrow">GALERIA</span>
+                        <h2>Um pouco do nosso trabalho.</h2>
+                    </div>
+                </div>
+
+                <div class="gallery-grid">
+
+                    ${spec.gallery.map((image, index) => `
+                        <div class="gallery-item gallery-${index + 1}">
+                            <img
+                                src="${safeURL(image, IMAGE_LIBRARY[index % IMAGE_LIBRARY.length])}"
+                                alt="Imagem da galeria"
+                                loading="lazy"
+                            />
+                        </div>
+                    `).join("")}
 
                 </div>
 
-            `).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
+            </div>
+        </section>
+    `;
 }
 
-
-/* =========================================================
-   FAQ
-========================================================= */
-
-function renderFAQ(section) {
-
-    const items =
-        isArray(section.items)
-            ? section.items
-            : [];
-
+function renderFAQ(spec) {
+    if (!spec.faq?.length) return "";
 
     return `
-<section class="section">
+        <section class="section faq-section">
+            <div class="container faq-container">
 
-    <div class="container faq-grid">
+                <div class="section-heading center">
+                    <span class="eyebrow">DÚVIDAS</span>
+                    <h2>Perguntas frequentes.</h2>
+                </div>
 
-        <div class="faq-intro">
+                <div class="faq-list">
 
-            <span class="section-kicker">
-                DÚVIDAS
-            </span>
+                    ${spec.faq.map((item, index) => `
+                        <details ${index === 0 ? "open" : ""}>
+                            <summary>
+                                ${escapeHTML(item.question)}
+                                <span>＋</span>
+                            </summary>
 
-            <h2>
-                ${escapeHTML(
-                    section.title ||
-                    "Perguntas frequentes"
-                )}
-            </h2>
+                            <p>
+                                ${escapeHTML(item.answer)}
+                            </p>
+                        </details>
+                    `).join("")}
 
-            <p>
-                ${escapeHTML(
-                    section.description ||
-                    "Encontre respostas para as perguntas mais comuns."
-                )}
-            </p>
+                </div>
 
-        </div>
+            </div>
+        </section>
+    `;
+}
 
+function renderCTA(spec) {
+    return `
+        <section class="cta-section">
+            <div class="container">
 
-        <div class="faq-list">
+                <div class="cta-box">
 
-            ${items.map(
-                (item, index) => `
-
-                <div class="faq-item">
-
-                    <button
-                        type="button"
-                        onclick="toggleFAQ(${index})"
-                    >
-
-                        <span>
-                            ${escapeHTML(
-                                item.question ||
-                                "Pergunta"
-                            )}
+                    <div>
+                        <span class="eyebrow">
+                            VAMOS COMEÇAR?
                         </span>
 
-                        <b id="faq-icon-${index}">
-                            +
-                        </b>
+                        <h2>
+                            ${escapeHTML(spec.cta.title)}
+                        </h2>
 
-                    </button>
+                        <p>
+                            ${escapeHTML(spec.cta.description)}
+                        </p>
+                    </div>
 
+                    <a class="button button-white" href="#contato">
+                        ${escapeHTML(spec.cta.button)}
+                    </a>
 
-                    <div
-                        class="faq-answer"
-                        id="faq-answer-${index}"
-                    >
-                        ${escapeHTML(
-                            item.answer || ""
-                        )}
+                </div>
+
+            </div>
+        </section>
+    `;
+}
+
+function renderContact(spec) {
+    return `
+        <section class="section contact-section" id="contato">
+            <div class="container contact-grid">
+
+                <div>
+                    <span class="eyebrow">CONTATO</span>
+
+                    <h2>
+                        ${escapeHTML(spec.contact.title)}
+                    </h2>
+
+                    <p>
+                        ${escapeHTML(spec.contact.description)}
+                    </p>
+                </div>
+
+                <div class="contact-info">
+
+                    <a href="mailto:${escapeHTML(spec.contact.email)}">
+                        <span>✉</span>
+                        ${escapeHTML(spec.contact.email)}
+                    </a>
+
+                    <a href="tel:${escapeHTML(spec.contact.phone)}">
+                        <span>⌕</span>
+                        ${escapeHTML(spec.contact.phone)}
+                    </a>
+
+                    <div>
+                        <span>⌖</span>
+                        ${escapeHTML(spec.contact.address)}
                     </div>
 
                 </div>
 
-            `
-            ).join("")}
-
-        </div>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   CTA
-========================================================= */
-
-function renderCTA(section) {
-
-    return `
-<section class="section cta-section">
-
-    <div class="container">
-
-        <div class="cta-box">
-
-            <div>
-
-                <span class="section-kicker">
-                    VAMOS COMEÇAR
-                </span>
-
-                <h2>
-                    ${escapeHTML(
-                        section.title ||
-                        "Pronto para começar?"
-                    )}
-                </h2>
-
-                <p>
-                    ${escapeHTML(
-                        section.description || ""
-                    )}
-                </p>
-
             </div>
-
-
-            <a
-                href="#contato"
-                class="button button-light"
-            >
-                ${escapeHTML(
-                    section.button ||
-                    "Entrar em contato"
-                )}
-            </a>
-
-        </div>
-
-    </div>
-
-</section>
-`;
+        </section>
+    `;
 }
-
-
-/* =========================================================
-   CONTACT
-========================================================= */
-
-function renderContact(section) {
-
-    return `
-<section
-    class="section"
-    id="contato"
->
-
-    <div class="container contact-grid">
-
-        <div>
-
-            <span class="section-kicker">
-                CONTATO
-            </span>
-
-            <h2>
-                ${escapeHTML(
-                    section.title ||
-                    "Vamos conversar?"
-                )}
-            </h2>
-
-            <p>
-                ${escapeHTML(
-                    section.description ||
-                    "Envie uma mensagem e entraremos em contato."
-                )}
-            </p>
-
-        </div>
-
-
-        <form
-            class="contact-form"
-            onsubmit="submitContact(event)"
-        >
-
-            <div class="form-row">
-
-                <input
-                    type="text"
-                    placeholder="Seu nome"
-                    required
-                >
-
-                <input
-                    type="email"
-                    placeholder="Seu e-mail"
-                    required
-                >
-
-            </div>
-
-
-            <textarea
-                placeholder="Como podemos ajudar?"
-                required
-            ></textarea>
-
-
-            <button
-                type="submit"
-                class="button button-primary"
-            >
-                Enviar mensagem
-            </button>
-
-        </form>
-
-    </div>
-
-</section>
-`;
-}
-
-
-/* =========================================================
-   SEÇÕES
-========================================================= */
-
-function renderSection(section) {
-
-    switch (section.type) {
-
-        case "features":
-            return renderFeatures(section);
-
-        case "about":
-            return renderAbout(section);
-
-        case "stats":
-            return renderStats(section);
-
-        case "products":
-            return renderProducts(section);
-
-        case "services":
-            return renderServices(section);
-
-        case "pricing":
-            return renderPricing(section);
-
-        case "testimonials":
-            return renderTestimonials(section);
-
-        case "gallery":
-            return renderGallery(section);
-
-        case "faq":
-            return renderFAQ(section);
-
-        case "cta":
-            return renderCTA(section);
-
-        case "contact":
-            return renderContact(section);
-
-        default:
-            return "";
-    }
-}
-
-
-/* =========================================================
-   FOOTER
-========================================================= */
 
 function renderFooter(spec) {
-
     return `
-<footer class="site-footer">
+        <footer class="site-footer">
+            <div class="container footer-inner">
 
-    <div class="container footer-inner">
+                <div>
+                    <strong>
+                        ${escapeHTML(spec.nav.brand)}
+                    </strong>
 
-        <strong>
-            ${escapeHTML(
-                spec.nav.logo
-            )}
-        </strong>
+                    <p>
+                        ${escapeHTML(spec.footer.text)}
+                    </p>
+                </div>
 
+                <span>
+                    ${escapeHTML(spec.footer.copyright)}
+                </span>
 
-        <span>
-            ${escapeHTML(
-                spec.footer.text
-            )}
-        </span>
-
-
-        <a href="#inicio">
-            ↑ Voltar ao topo
-        </a>
-
-    </div>
-
-</footer>
-`;
+            </div>
+        </footer>
+    `;
 }
-
 
 /* =========================================================
-   CSS GERADO
-========================================================= */
+   CSS DO SITE GERADO
+   ========================================================= */
 
-function renderGeneratedCSS(spec) {
-
-    const theme =
-        spec.theme || {};
-
-    const font =
-        FONT_LIBRARY.includes(
-            spec.font
-        )
-            ? spec.font
-            : "Inter";
-
+function generateSiteCSS(spec) {
+    const t = spec.theme;
 
     return `
+@import url('https://fonts.googleapis.com/css2?family=${encodeURIComponent(
+        t.font
+    ).replace(/%20/g, "+")}:wght@400;500;600;700;800&display=swap');
+
 :root {
-
-    --primary: ${theme.primary || "#635BFF"};
-    --secondary: ${theme.secondary || "#111827"};
-    --background: ${theme.background || "#FFFFFF"};
-    --surface: ${theme.surface || "#F7F8FA"};
-    --text: ${theme.text || "#17191F"};
-    --muted: ${theme.muted || "#6B7280"};
-    --accent: ${theme.accent || "#8B5CF6"};
-
-    --container: 1180px;
-
+    --primary: ${t.primary};
+    --secondary: ${t.secondary};
+    --background: ${t.background};
+    --surface: ${t.surface};
+    --text: ${t.text};
+    --muted: ${t.muted};
+    --radius: ${t.radius};
+    --font: "${t.font}", sans-serif;
 }
-
 
 * {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
-
 
 html {
     scroll-behavior: smooth;
 }
 
-
 body {
-
-    margin: 0;
-
-    background:
-        var(--background);
-
-    color:
-        var(--text);
-
-    font-family:
-        "${font}",
-        Arial,
-        sans-serif;
-
-    line-height:
-        1.6;
+    font-family: var(--font);
+    background: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
 }
-
 
 body,
 button,
 input,
 textarea {
-    font-family:
-        "${font}",
-        Arial,
-        sans-serif;
+    font-family: var(--font);
 }
-
-
-a {
-    color:
-        inherit;
-
-    text-decoration:
-        none;
-}
-
 
 img {
-    display:
-        block;
-
-    width:
-        100%;
+    max-width: 100%;
+    display: block;
 }
 
-
-button,
-input,
-textarea {
-    font: inherit;
+a {
+    color: inherit;
+    text-decoration: none;
 }
-
 
 button {
-    cursor:
-        pointer;
+    border: 0;
+    cursor: pointer;
 }
-
 
 .container {
-
-    width:
-        min(
-            var(--container),
-            calc(100% - 40px)
-        );
-
-    margin:
-        0 auto;
+    width: min(1160px, calc(100% - 40px));
+    margin-inline: auto;
 }
-
-
-/* NAV */
-
-.site-nav {
-
-    position:
-        sticky;
-
-    top:
-        0;
-
-    z-index:
-        50;
-
-    background:
-        rgba(255,255,255,.90);
-
-    border-bottom:
-        1px solid #e8e9ec;
-
-    backdrop-filter:
-        blur(18px);
-}
-
-
-.nav-inner {
-
-    min-height:
-        76px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    gap:
-        25px;
-}
-
-
-.logo {
-
-    font-size:
-        19px;
-
-    font-weight:
-        800;
-
-    letter-spacing:
-        -.6px;
-}
-
-
-.desktop-nav {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        28px;
-}
-
-
-.desktop-nav a {
-
-    color:
-        var(--muted);
-
-    font-size:
-        14px;
-
-    transition:
-        .2s;
-}
-
-
-.desktop-nav a:hover {
-    color:
-        var(--text);
-}
-
-
-.nav-actions {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        10px;
-}
-
-
-.nav-button {
-
-    padding:
-        11px 17px;
-
-    color:
-        white;
-
-    background:
-        var(--primary);
-
-    border-radius:
-        10px;
-
-    font-size:
-        13px;
-
-    font-weight:
-        700;
-}
-
-
-.mobile-menu-button {
-
-    display:
-        none;
-
-    width:
-        40px;
-
-    height:
-        40px;
-
-    border:
-        0;
-
-    border-radius:
-        10px;
-
-    background:
-        var(--surface);
-}
-
-
-.mobile-menu {
-    display:
-        none;
-}
-
-
-/* HERO */
-
-.hero {
-
-    padding:
-        100px 0 110px;
-
-    overflow:
-        hidden;
-
-    background:
-        radial-gradient(
-            circle at 85% 20%,
-            rgba(99,91,255,.12),
-            transparent 35%
-        ),
-        var(--background);
-}
-
-
-.hero-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        1fr 1fr;
-
-    align-items:
-        center;
-
-    gap:
-        70px;
-}
-
-
-.eyebrow,
-.section-kicker {
-
-    display:
-        inline-block;
-
-    color:
-        var(--primary);
-
-    font-size:
-        11px;
-
-    font-weight:
-        800;
-
-    letter-spacing:
-        1.5px;
-}
-
-
-.hero h1 {
-
-    max-width:
-        700px;
-
-    margin:
-        15px 0 20px;
-
-    font-size:
-        clamp(
-            48px,
-            6vw,
-            82px
-        );
-
-    line-height:
-        .98;
-
-    letter-spacing:
-        -4px;
-}
-
-
-.hero-content > p {
-
-    max-width:
-        590px;
-
-    color:
-        var(--muted);
-
-    font-size:
-        18px;
-
-    line-height:
-        1.7;
-}
-
-
-.hero-actions {
-
-    display:
-        flex;
-
-    flex-wrap:
-        wrap;
-
-    gap:
-        11px;
-
-    margin-top:
-        30px;
-}
-
-
-.button {
-
-    display:
-        inline-flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        center;
-
-    min-height:
-        48px;
-
-    padding:
-        0 20px;
-
-    border-radius:
-        11px;
-
-    border:
-        1px solid transparent;
-
-    font-size:
-        13px;
-
-    font-weight:
-        750;
-
-    transition:
-        .2s;
-}
-
-
-.button:hover {
-    transform:
-        translateY(-2px);
-}
-
-
-.button-primary {
-
-    color:
-        white;
-
-    background:
-        var(--primary);
-
-    box-shadow:
-        0 10px 25px rgba(99,91,255,.20);
-}
-
-
-.button-secondary {
-
-    color:
-        var(--text);
-
-    background:
-        white;
-
-    border-color:
-        #e5e7eb;
-}
-
-
-.button-light {
-
-    color:
-        var(--text);
-
-    background:
-        white;
-}
-
-
-.hero-visual {
-    position:
-        relative;
-}
-
-
-.hero-image-wrap {
-
-    overflow:
-        hidden;
-
-    aspect-ratio:
-        4 / 4.5;
-
-    border-radius:
-        28px;
-
-    box-shadow:
-        0 30px 80px rgba(0,0,0,.13);
-}
-
-
-.hero-image-wrap img {
-
-    height:
-        100%;
-
-    object-fit:
-        cover;
-}
-
-
-.floating-card {
-
-    position:
-        absolute;
-
-    left:
-        -35px;
-
-    bottom:
-        35px;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        12px;
-
-    padding:
-        15px 17px;
-
-    background:
-        white;
-
-    border-radius:
-        15px;
-
-    box-shadow:
-        0 20px 50px rgba(0,0,0,.13);
-}
-
-
-.floating-dot {
-
-    width:
-        10px;
-
-    height:
-        10px;
-
-    border-radius:
-        50%;
-
-    background:
-        #28c76f;
-}
-
-
-.floating-card strong,
-.floating-card small {
-    display:
-        block;
-}
-
-
-.floating-card strong {
-    font-size:
-        12px;
-}
-
-
-.floating-card small {
-
-    margin-top:
-        2px;
-
-    color:
-        var(--muted);
-
-    font-size:
-        10px;
-}
-
-
-/* SECTIONS */
 
 .section {
-
-    padding:
-        105px 0;
+    padding: 110px 0;
 }
 
-
-.section:nth-child(even) {
-    background:
-        var(--surface);
+.eyebrow {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .16em;
 }
-
 
 .section-heading {
-
-    display:
-        flex;
-
-    align-items:
-        end;
-
-    justify-content:
-        space-between;
-
-    gap:
-        40px;
-
-    margin-bottom:
-        55px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 40px;
+    margin-bottom: 55px;
 }
 
-
-.section-heading.centered {
-
-    display:
-        block;
-
-    text-align:
-        center;
-
-    max-width:
-        700px;
-
-    margin-left:
-        auto;
-
-    margin-right:
-        auto;
+.section-heading.center {
+    display: block;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
 }
-
 
 .section-heading h2,
 .about-content h2,
-.faq-intro h2,
-.contact-grid h2,
-.cta-box h2 {
-
-    margin:
-        10px 0 0;
-
-    font-size:
-        clamp(
-            34px,
-            4vw,
-            52px
-        );
-
-    line-height:
-        1.05;
-
-    letter-spacing:
-        -2px;
+.contact-section h2 {
+    font-size: clamp(34px, 5vw, 58px);
+    line-height: 1.05;
+    letter-spacing: -.045em;
 }
-
 
 .section-heading p {
-
-    max-width:
-        480px;
-
-    margin:
-        0;
-
-    color:
-        var(--muted);
+    max-width: 420px;
+    color: var(--muted);
 }
 
-
-/* FEATURES */
-
-.feature-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    border-top:
-        1px solid #e5e7eb;
+.site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: color-mix(in srgb, var(--background) 88%, transparent);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(0,0,0,.06);
 }
 
-
-.feature-item {
-
-    min-height:
-        250px;
-
-    padding:
-        30px;
-
-    border-right:
-        1px solid #e5e7eb;
+.nav-inner {
+    min-height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
 }
 
-
-.feature-item:last-child {
-    border-right:
-        0;
+.brand {
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -.04em;
 }
 
-
-.feature-number {
-
-    color:
-        #b7bbc3;
-
-    font-size:
-        11px;
-
-    font-weight:
-        800;
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 30px;
 }
 
-
-.feature-icon {
-
-    display:
-        grid;
-
-    place-items:
-        center;
-
-    width:
-        48px;
-
-    height:
-        48px;
-
-    margin:
-        40px 0 25px;
-
-    border-radius:
-        13px;
-
-    color:
-        var(--primary);
-
-    background:
-        rgba(99,91,255,.08);
-
-    font-size:
-        20px;
+.nav-links a {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    transition: .2s ease;
 }
 
-
-.feature-item h3 {
-
-    margin:
-        0 0 9px;
-
-    font-size:
-        18px;
+.nav-links a:hover {
+    color: var(--text);
 }
 
-
-.feature-item p {
-
-    margin:
-        0;
-
-    color:
-        var(--muted);
-
-    font-size:
-        14px;
+.nav-cta {
+    padding: 11px 18px;
+    border-radius: 999px;
+    background: var(--text);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
 }
 
+.mobile-menu {
+    display: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--surface);
+    font-size: 20px;
+}
 
-/* ABOUT */
+.hero {
+    position: relative;
+    overflow: hidden;
+    padding: 100px 0 120px;
+}
+
+.hero-grid {
+    min-height: 620px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 70px;
+}
+
+.hero-content h1 {
+    max-width: 720px;
+    font-size: clamp(52px, 7vw, 88px);
+    line-height: .98;
+    letter-spacing: -.065em;
+}
+
+.hero-content > p {
+    max-width: 610px;
+    margin-top: 28px;
+    color: var(--muted);
+    font-size: 18px;
+}
+
+.hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 36px;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    padding: 0 24px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+}
+
+.button-primary {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 15px 35px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.button-secondary {
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,.08);
+}
+
+.button-white {
+    background: white;
+    color: var(--text);
+}
+
+.hero-visual {
+    position: relative;
+}
+
+.hero-visual img {
+    position: relative;
+    width: 100%;
+    height: 580px;
+    object-fit: cover;
+    border-radius: 32px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.15);
+}
+
+.hero-glow {
+    position: absolute;
+    width: 260px;
+    height: 260px;
+    right: -80px;
+    top: -80px;
+    border-radius: 50%;
+    background: var(--primary);
+    opacity: .18;
+    filter: blur(60px);
+}
+
+.features-grid,
+.services-grid,
+.products-grid,
+.pricing-grid,
+.testimonials-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.features-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.feature-card,
+.service-card,
+.product-card,
+.pricing-card,
+.testimonial-card {
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,.07);
+    border-radius: var(--radius);
+}
+
+.feature-card {
+    padding: 34px;
+}
+
+.feature-icon,
+.service-icon {
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    border-radius: 15px;
+    background: color-mix(in srgb, var(--primary) 10%, white);
+    color: var(--primary);
+    font-size: 21px;
+    margin-bottom: 25px;
+}
+
+.feature-card h3,
+.service-card h3,
+.product-card h3,
+.pricing-card h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.feature-card p,
+.service-card p,
+.product-card p,
+.pricing-card > p,
+.testimonial-card p,
+.about-content p,
+.contact-section p {
+    color: var(--muted);
+}
 
 .about-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        1.05fr .95fr;
-
-    align-items:
-        center;
-
-    gap:
-        80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 80px;
 }
-
-
-.about-image {
-
-    overflow:
-        hidden;
-
-    border-radius:
-        24px;
-
-    aspect-ratio:
-        1.15;
-}
-
 
 .about-image img {
-
-    height:
-        100%;
-
-    object-fit:
-        cover;
+    width: 100%;
+    height: 600px;
+    object-fit: cover;
+    border-radius: 30px;
 }
-
 
 .about-content p {
-
-    max-width:
-        530px;
-
-    color:
-        var(--muted);
-
-    font-size:
-        17px;
-
-    line-height:
-        1.8;
-
-    margin:
-        25px 0;
+    max-width: 570px;
+    margin-top: 25px;
+    font-size: 18px;
 }
-
 
 .text-link {
-
-    color:
-        var(--primary);
-
-    font-size:
-        14px;
-
-    font-weight:
-        800;
+    display: inline-flex;
+    gap: 10px;
+    margin-top: 30px;
+    color: var(--primary);
+    font-weight: 700;
 }
-
-
-/* STATS */
 
 .stats-section {
-
-    padding:
-        70px 0;
-
-    background:
-        var(--secondary) !important;
-
-    color:
-        white;
+    padding: 70px 0;
+    background: var(--text);
+    color: white;
 }
-
 
 .stats-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(4, 1fr);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
 }
 
-
-.stat-item {
-
-    padding:
-        10px 30px;
-
-    border-right:
-        1px solid rgba(255,255,255,.14);
+.stat strong {
+    display: block;
+    font-size: clamp(34px, 5vw, 58px);
+    line-height: 1;
 }
 
-
-.stat-item:last-child {
-    border-right:
-        0;
+.stat span {
+    display: block;
+    margin-top: 10px;
+    color: rgba(255,255,255,.6);
 }
 
-
-.stat-item strong {
-
-    display:
-        block;
-
-    font-size:
-        45px;
-
-    letter-spacing:
-        -2px;
+.services-grid {
+    grid-template-columns: repeat(3, 1fr);
 }
-
-
-.stat-item span {
-
-    color:
-        rgba(255,255,255,.6);
-
-    font-size:
-        13px;
-}
-
-
-/* SERVICES */
-
-.service-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap:
-        15px;
-}
-
 
 .service-card {
-
-    min-height:
-        280px;
-
-    padding:
-        27px;
-
-    border:
-        1px solid #e5e7eb;
-
-    border-radius:
-        20px;
-
-    background:
-        white;
-
-    transition:
-        .25s;
+    padding: 35px;
+    transition: transform .2s ease, box-shadow .2s ease;
 }
-
 
 .service-card:hover {
-
-    transform:
-        translateY(-5px);
-
-    box-shadow:
-        0 20px 50px rgba(0,0,0,.07);
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0,0,0,.08);
 }
 
-
-.service-top {
-
-    display:
-        flex;
-
-    justify-content:
-        space-between;
-
-    color:
-        #a3a7af;
-
-    font-size:
-        11px;
+.service-card a {
+    display: inline-block;
+    margin-top: 28px;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 700;
 }
 
-
-.service-card h3 {
-
-    margin:
-        80px 0 10px;
-
-    font-size:
-        23px;
+.products-grid {
+    grid-template-columns: repeat(3, 1fr);
 }
-
-
-.service-card p {
-
-    margin:
-        0;
-
-    color:
-        var(--muted);
-}
-
-
-/* PRODUCTS */
-
-.product-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap:
-        20px;
-}
-
 
 .product-card {
-
-    overflow:
-        hidden;
-
-    background:
-        white;
-
-    border:
-        1px solid #e5e7eb;
-
-    border-radius:
-        18px;
+    overflow: hidden;
 }
-
 
 .product-image {
-
-    aspect-ratio:
-        1.2;
-
-    overflow:
-        hidden;
+    aspect-ratio: 1 / .82;
+    overflow: hidden;
 }
-
 
 .product-image img {
-
-    height:
-        100%;
-
-    object-fit:
-        cover;
-
-    transition:
-        .4s;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .5s ease;
 }
 
-
-.product-card:hover img {
-    transform:
-        scale(1.04);
+.product-card:hover .product-image img {
+    transform: scale(1.05);
 }
 
-
-.product-content {
-    padding:
-        20px;
+.product-body {
+    padding: 25px;
 }
 
-
-.product-content h3 {
-    margin:
-        0 0 6px;
+.product-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 25px;
 }
 
-
-.product-content p {
-
-    margin:
-        0 0 15px;
-
-    color:
-        var(--muted);
-
-    font-size:
-        13px;
+.product-bottom strong {
+    font-size: 21px;
 }
 
-
-.product-price {
-    font-size:
-        18px;
+.product-bottom a {
+    color: var(--primary);
+    font-weight: 700;
 }
-
-
-/* PRICING */
 
 .pricing-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap:
-        18px;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
 }
-
 
 .pricing-card {
-
-    position:
-        relative;
-
-    padding:
-        35px;
-
-    border:
-        1px solid #e5e7eb;
-
-    border-radius:
-        22px;
-
-    background:
-        white;
+    position: relative;
+    padding: 35px;
 }
-
 
 .pricing-card.featured {
-
-    color:
-        white;
-
-    background:
-        var(--secondary);
-
-    transform:
-        translateY(-8px);
-
-    box-shadow:
-        0 25px 60px rgba(0,0,0,.18);
+    border: 2px solid var(--primary);
+    box-shadow: 0 25px 60px color-mix(in srgb, var(--primary) 15%, transparent);
 }
-
-
-.pricing-card h3 {
-    margin:
-        0;
-}
-
-
-.price {
-
-    margin:
-        22px 0 12px;
-
-    font-size:
-        38px;
-
-    font-weight:
-        800;
-}
-
-
-.pricing-card p {
-
-    min-height:
-        65px;
-
-    color:
-        var(--muted);
-}
-
-
-.pricing-card.featured p {
-    color:
-        rgba(255,255,255,.6);
-}
-
 
 .popular-badge {
-
-    position:
-        absolute;
-
-    top:
-        18px;
-
-    right:
-        18px;
-
-    padding:
-        5px 8px;
-
-    border-radius:
-        20px;
-
-    color:
-        var(--secondary);
-
-    background:
-        white;
-
-    font-size:
-        8px;
-
-    font-weight:
-        900;
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
 }
 
-
-/* TESTIMONIAL */
-
-.testimonial-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap:
-        18px;
+.price {
+    margin: 25px 0;
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: -.05em;
 }
 
+.pricing-card ul {
+    list-style: none;
+    margin-bottom: 30px;
+}
+
+.pricing-card li {
+    display: flex;
+    gap: 10px;
+    margin: 13px 0;
+    color: var(--muted);
+}
+
+.pricing-card li span {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.pricing-card .button {
+    width: 100%;
+}
+
+.testimonials-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
 
 .testimonial-card {
-
-    padding:
-        27px;
-
-    border:
-        1px solid #e5e7eb;
-
-    border-radius:
-        20px;
-
-    background:
-        white;
+    padding: 32px;
 }
-
 
 .stars {
-
-    color:
-        #f5b93d;
-
-    letter-spacing:
-        2px;
+    color: #F59E0B;
+    letter-spacing: 2px;
+    margin-bottom: 22px;
 }
 
-
-.testimonial-card > p {
-
-    min-height:
-        120px;
-
-    color:
-        #4d535d;
-
-    line-height:
-        1.7;
+.testimonial-card p {
+    font-size: 16px;
 }
-
 
 .testimonial-author {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    gap:
-        10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 30px;
 }
-
-
-.testimonial-author img,
-.avatar {
-
-    width:
-        38px;
-
-    height:
-        38px;
-
-    border-radius:
-        50%;
-
-    object-fit:
-        cover;
-}
-
 
 .avatar {
-
-    display:
-        grid;
-
-    place-items:
-        center;
-
-    color:
-        white;
-
-    background:
-        var(--primary);
-
-    font-weight:
-        800;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--text);
+    color: white;
+    font-weight: 700;
 }
-
 
 .testimonial-author strong,
 .testimonial-author span {
-    display:
-        block;
+    display: block;
 }
-
 
 .testimonial-author span {
-
-    color:
-        var(--muted);
-
-    font-size:
-        10px;
+    color: var(--muted);
+    font-size: 12px;
 }
-
-
-/* GALLERY */
 
 .gallery-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-    gap:
-        14px;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: 230px;
+    gap: 15px;
 }
-
 
 .gallery-item {
-
-    position:
-        relative;
-
-    overflow:
-        hidden;
-
-    min-height:
-        260px;
-
-    border-radius:
-        18px;
+    overflow: hidden;
+    border-radius: 20px;
 }
-
 
 .gallery-item img {
-
-    height:
-        100%;
-
-    min-height:
-        260px;
-
-    object-fit:
-        cover;
-
-    transition:
-        .4s;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
-
-.gallery-item:hover img {
-    transform:
-        scale(1.05);
+.gallery-1 {
+    grid-column: span 7;
 }
 
-
-.gallery-caption {
-
-    position:
-        absolute;
-
-    left:
-        15px;
-
-    right:
-        15px;
-
-    bottom:
-        15px;
-
-    padding:
-        12px;
-
-    color:
-        white;
-
-    background:
-        rgba(0,0,0,.55);
-
-    border-radius:
-        10px;
-
-    font-size:
-        12px;
+.gallery-2 {
+    grid-column: span 5;
 }
 
-
-/* FAQ */
-
-.faq-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        .75fr 1.25fr;
-
-    gap:
-        80px;
+.gallery-3,
+.gallery-4,
+.gallery-5,
+.gallery-6 {
+    grid-column: span 3;
 }
 
-
-.faq-intro p {
-
-    max-width:
-        420px;
-
-    color:
-        var(--muted);
+.faq-container {
+    max-width: 800px;
 }
-
 
 .faq-list {
-
-    border-top:
-        1px solid #e5e7eb;
+    display: grid;
+    gap: 10px;
 }
 
-
-.faq-item {
-
-    border-bottom:
-        1px solid #e5e7eb;
+.faq-list details {
+    padding: 23px 25px;
+    border: 1px solid rgba(0,0,0,.08);
+    border-radius: 17px;
+    background: var(--surface);
 }
 
-
-.faq-item button {
-
-    width:
-        100%;
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    padding:
-        22px 0;
-
-    border:
-        0;
-
-    background:
-        transparent;
-
-    text-align:
-        left;
+.faq-list summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
 }
 
-
-.faq-item button span {
-    font-weight:
-        700;
+.faq-list summary::-webkit-details-marker {
+    display: none;
 }
 
-
-.faq-answer {
-
-    display:
-        none;
-
-    padding:
-        0 30px 22px 0;
-
-    color:
-        var(--muted);
+.faq-list summary span {
+    font-size: 22px;
+    color: var(--primary);
 }
 
-
-.faq-answer.open {
-    display:
-        block;
+.faq-list details p {
+    margin-top: 15px;
+    color: var(--muted);
 }
-
-
-/* CTA */
 
 .cta-section {
-    background:
-        var(--surface) !important;
+    padding: 60px 0 100px;
 }
-
 
 .cta-box {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    gap:
-        40px;
-
-    padding:
-        65px;
-
-    border-radius:
-        28px;
-
-    color:
-        white;
-
-    background:
-        var(--secondary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 65px;
+    border-radius: 32px;
+    background: linear-gradient(
+        135deg,
+        var(--primary),
+        var(--secondary)
+    );
+    color: white;
 }
 
+.cta-box .eyebrow {
+    color: rgba(255,255,255,.75);
+}
+
+.cta-box h2 {
+    max-width: 700px;
+    font-size: clamp(36px, 5vw, 60px);
+    line-height: 1;
+    letter-spacing: -.05em;
+}
 
 .cta-box p {
-    color:
-        rgba(255,255,255,.6);
+    max-width: 600px;
+    margin-top: 16px;
+    color: rgba(255,255,255,.75);
 }
-
-
-/* CONTACT */
 
 .contact-grid {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        .8fr 1.2fr;
-
-    gap:
-        80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
 }
 
-
-.contact-grid > div > p {
-    color:
-        var(--muted);
+.contact-section h2 {
+    margin-bottom: 20px;
 }
 
-
-.contact-form {
-
-    display:
-        flex;
-
-    flex-direction:
-        column;
-
-    gap:
-        12px;
+.contact-section p {
+    max-width: 550px;
 }
 
-
-.form-row {
-
-    display:
-        grid;
-
-    grid-template-columns:
-        1fr 1fr;
-
-    gap:
-        12px;
+.contact-info {
+    display: grid;
+    gap: 14px;
 }
 
-
-.contact-form input,
-.contact-form textarea {
-
-    width:
-        100%;
-
-    padding:
-        15px;
-
-    border:
-        1px solid #e5e7eb;
-
-    border-radius:
-        11px;
-
-    outline:
-        0;
-
-    background:
-        white;
+.contact-info a,
+.contact-info > div {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid rgba(0,0,0,.07);
 }
 
-
-.contact-form textarea {
-
-    min-height:
-        150px;
-
-    resize:
-        vertical;
+.contact-info span {
+    color: var(--primary);
+    font-size: 20px;
 }
-
-
-.contact-form input:focus,
-.contact-form textarea:focus {
-
-    border-color:
-        var(--primary);
-}
-
-
-/* FOOTER */
 
 .site-footer {
-
-    padding:
-        30px 0;
-
-    border-top:
-        1px solid #e5e7eb;
-
-    background:
-        white;
+    padding: 45px 0;
+    border-top: 1px solid rgba(0,0,0,.08);
 }
-
 
 .footer-inner {
-
-    display:
-        flex;
-
-    align-items:
-        center;
-
-    justify-content:
-        space-between;
-
-    gap:
-        20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
 }
 
-
-.footer-inner span,
-.footer-inner a {
-
-    color:
-        var(--muted);
-
-    font-size:
-        11px;
+.footer-inner strong {
+    font-size: 20px;
 }
 
+.footer-inner p {
+    margin-top: 5px;
+    color: var(--muted);
+}
+
+.footer-inner > span {
+    color: var(--muted);
+    font-size: 13px;
+}
 
 /* RESPONSIVO */
 
 @media (max-width: 900px) {
 
-    .desktop-nav,
-    .nav-button {
-        display:
-            none;
+    .nav-links,
+    .nav-cta {
+        display: none;
     }
 
-
-    .mobile-menu-button {
-        display:
-            block;
+    .mobile-menu {
+        display: block;
     }
-
-
-    .mobile-menu.open {
-
-        display:
-            flex;
-
-        flex-direction:
-            column;
-
-        padding:
-            10px 20px 20px;
-
-        border-top:
-            1px solid #eee;
-    }
-
-
-    .mobile-menu a {
-
-        padding:
-            13px 0;
-
-        font-size:
-            14px;
-    }
-
 
     .hero-grid,
     .about-grid,
-    .faq-grid,
     .contact-grid {
-
-        grid-template-columns:
-            1fr;
+        grid-template-columns: 1fr;
     }
-
 
     .hero {
-        padding:
-            70px 0;
+        padding-top: 70px;
     }
 
-
-    .hero h1 {
-        font-size:
-            52px;
+    .hero-visual img {
+        height: 430px;
     }
 
-
-    .floating-card {
-        left:
-            15px;
-    }
-
-
-    .feature-grid,
-    .service-grid,
-    .product-grid,
+    .features-grid,
+    .services-grid,
+    .products-grid,
     .pricing-grid,
-    .testimonial-grid {
-
-        grid-template-columns:
-            1fr;
+    .testimonials-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
-
-
-    .feature-item {
-
-        border-right:
-            0;
-
-        border-bottom:
-            1px solid #e5e7eb;
-    }
-
 
     .stats-grid {
-
-        grid-template-columns:
-            repeat(2, 1fr);
-
-        gap:
-            25px;
+        grid-template-columns: repeat(2, 1fr);
     }
 
-
-    .stat-item {
-        border-right:
-            0;
+    .gallery-1,
+    .gallery-2 {
+        grid-column: span 6;
     }
 
-
-    .gallery-grid {
-        grid-template-columns:
-            1fr 1fr;
+    .gallery-3,
+    .gallery-4,
+    .gallery-5,
+    .gallery-6 {
+        grid-column: span 6;
     }
-
 
     .cta-box {
-
-        flex-direction:
-            column;
-
-        align-items:
-            flex-start;
-
-        padding:
-            40px;
+        padding: 45px;
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
-
 
 @media (max-width: 600px) {
 
     .container {
-
-        width:
-            min(
-                calc(100% - 28px),
-                var(--container)
-            );
+        width: min(100% - 28px, 1160px);
     }
-
-
-    .hero h1 {
-
-        font-size:
-            43px;
-
-        letter-spacing:
-            -2.5px;
-    }
-
-
-    .hero-content > p {
-        font-size:
-            16px;
-    }
-
 
     .section {
-        padding:
-            70px 0;
+        padding: 75px 0;
     }
 
+    .hero-content h1 {
+        font-size: 52px;
+    }
+
+    .hero-visual img {
+        height: 350px;
+        border-radius: 22px;
+    }
+
+    .features-grid,
+    .services-grid,
+    .products-grid,
+    .pricing-grid,
+    .testimonials-grid,
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 
     .section-heading {
-        display:
-            block;
+        display: block;
     }
-
 
     .section-heading p {
-        margin-top:
-            15px;
+        margin-top: 18px;
     }
 
+    .about-image img {
+        height: 400px;
+    }
 
     .gallery-grid {
-        grid-template-columns:
-            1fr;
+        grid-template-columns: 1fr;
+        grid-auto-rows: 250px;
     }
 
-
-    .form-row {
-        grid-template-columns:
-            1fr;
+    .gallery-1,
+    .gallery-2,
+    .gallery-3,
+    .gallery-4,
+    .gallery-5,
+    .gallery-6 {
+        grid-column: span 1;
     }
 
+    .cta-box {
+        padding: 35px 25px;
+        border-radius: 24px;
+    }
 
     .footer-inner {
-
-        flex-direction:
-            column;
-
-        align-items:
-            flex-start;
+        flex-direction: column;
     }
 }
 `;
 }
-
 
 /* =========================================================
    JS DO SITE GERADO
-========================================================= */
+   ========================================================= */
 
-function renderGeneratedJS() {
-
+function generateSiteJS() {
     return `
-function toggleMenu() {
+document.addEventListener("DOMContentLoaded", () => {
 
-    const menu =
-        document.getElementById(
-            "mobileMenu"
-        );
+    const menu = document.querySelector(".mobile-menu");
+    const nav = document.querySelector(".nav-links");
 
-    if (!menu) {
-        return;
+    if (menu && nav) {
+        menu.addEventListener("click", () => {
+            nav.classList.toggle("mobile-open");
+        });
     }
 
-    menu.classList.toggle("open");
-}
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener("click", event => {
+            const target = document.querySelector(link.getAttribute("href"));
 
+            if (target) {
+                event.preventDefault();
 
-function closeMenu() {
+                target.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start"
+                });
+            }
+        });
+    });
 
-    const menu =
-        document.getElementById(
-            "mobileMenu"
-        );
-
-    if (!menu) {
-        return;
-    }
-
-    menu.classList.remove("open");
-}
-
-
-function toggleFAQ(index) {
-
-    const answer =
-        document.getElementById(
-            "faq-answer-" + index
-        );
-
-    const icon =
-        document.getElementById(
-            "faq-icon-" + index
-        );
-
-    if (!answer) {
-        return;
-    }
-
-    const opened =
-        answer.classList.toggle(
-            "open"
-        );
-
-    if (icon) {
-
-        icon.textContent =
-            opened
-                ? "−"
-                : "+";
-    }
-}
-
-
-function submitContact(event) {
-
-    event.preventDefault();
-
-    const form =
-        event.target;
-
-    const button =
-        form.querySelector(
-            "button"
-        );
-
-    if (!button) {
-        return;
-    }
-
-    const original =
-        button.textContent;
-
-    button.textContent =
-        "Mensagem enviada ✓";
-
-    button.disabled =
-        true;
-
-    setTimeout(() => {
-
-        form.reset();
-
-        button.textContent =
-            original;
-
-        button.disabled =
-            false;
-
-    }, 2200);
-}
+});
 `;
 }
 
-
 /* =========================================================
-   HTML COMPLETO
-========================================================= */
+   GERAR SITE COMPLETO
+   ========================================================= */
 
-function renderHTML(spec) {
+function generateSiteHTML(spec) {
+    const font = encodeURIComponent(spec.theme.font)
+        .replace(/%20/g, "+");
 
-    const sections =
-        isArray(spec.sections)
-            ? spec.sections
-            : [];
-
-
-    const generatedCSS =
-        renderGeneratedCSS(
-            spec
-        );
-
-
-    const generatedJS =
-        renderGeneratedJS();
-
-
-    const font =
-        spec.font || "Inter";
-
-
-    const googleFont =
-        encodeURIComponent(
-            font
-        ).replace(
-            /%20/g,
-            "+"
-        );
-
+    const css = generateSiteCSS(spec);
+    const js = generateSiteJS();
 
     return `<!DOCTYPE html>
-
 <html lang="pt-BR">
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    <meta
-        name="description"
-        content="${escapeHTML(
-            spec.hero.description || ""
-        )}"
-    >
+<title>${escapeHTML(spec.projectName)}</title>
 
-    <title>
-        ${escapeHTML(
-            spec.projectName
-        )}
-    </title>
+<meta
+    name="description"
+    content="${escapeHTML(spec.hero.description)}"
+>
 
+<link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+>
 
-    <link
-        rel="preconnect"
-        href="https://fonts.googleapis.com"
-    >
+<link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+>
 
-    <link
-        rel="preconnect"
-        href="https://fonts.gstatic.com"
-        crossorigin
-    >
+<link
+    href="https://fonts.googleapis.com/css2?family=${font}:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+>
 
-    <link
-        href="https://fonts.googleapis.com/css2?family=${googleFont}:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
-
-
-    <style>
-
-${generatedCSS}
-
-    </style>
+<style>
+${css}
+</style>
 
 </head>
 
-
 <body>
 
-    ${renderNav(spec)}
+${renderNav(spec)}
 
-    <main>
+<main>
 
-        ${renderHero(spec)}
+${renderHero(spec)}
 
-        ${sections
-            .map(renderSection)
-            .join("\n")}
+${renderFeatures(spec)}
 
-    </main>
+${renderAbout(spec)}
 
+${renderStats(spec)}
 
-    ${renderFooter(spec)}
+${renderServices(spec)}
 
+${renderProducts(spec)}
 
-    <script>
+${renderPricing(spec)}
 
-${generatedJS}
+${renderTestimonials(spec)}
 
-    <\/script>
+${renderGallery(spec)}
+
+${renderFAQ(spec)}
+
+${renderCTA(spec)}
+
+${renderContact(spec)}
+
+</main>
+
+${renderFooter(spec)}
+
+<script>
+${js}
+<\/script>
 
 </body>
 
 </html>`;
 }
 
-
 /* =========================================================
-   GERAR ARQUIVOS
-========================================================= */
+   ATUALIZAR ARQUIVOS
+   ========================================================= */
 
-function generateFiles(spec) {
+function rebuildFiles() {
+    state.files.html = generateSiteHTML(state.spec);
+    state.files.css = generateSiteCSS(state.spec);
+    state.files.js = generateSiteJS();
 
-    return {
-
-        html:
-            renderHTML(spec),
-
-        css:
-            renderGeneratedCSS(spec),
-
-        js:
-            renderGeneratedJS()
-    };
+    updateEditor();
+    updatePreview();
 }
-
 
 /* =========================================================
    PREVIEW
-========================================================= */
+   ========================================================= */
 
 function updatePreview() {
+    if (!els.preview) return;
 
-    const preview =
-        $("#preview");
-
-    if (!preview) {
-        return;
-    }
-
-
-    preview.srcdoc =
-        state.files.html || "";
+    els.preview.srcdoc = state.files.html;
 }
 
+function refreshPreview() {
+    if (!els.preview) return;
 
-/* =========================================================
-   EDITOR DE CÓDIGO
-========================================================= */
+    const current = state.files.html;
 
-function updateCodeEditor() {
+    els.preview.srcdoc = "";
 
-    const editor =
-        $("#codeEditor");
-
-    if (!editor) {
-        return;
-    }
-
-
-    editor.value =
-        state.files[
-            state.activeCodeTab
-        ] || "";
+    setTimeout(() => {
+        els.preview.srcdoc = current;
+    }, 30);
 }
 
-
-function setActiveCodeTab(tab) {
-
-    if (
-        ![
-            "html",
-            "css",
-            "js"
-        ].includes(tab)
-    ) {
-        return;
-    }
-
-
-    state.activeCodeTab =
-        tab;
-
-
-    $$(".code-tab").forEach(
-        button => {
-
-            button.classList.toggle(
-                "active",
-                button.dataset.tab === tab
-            );
-
-        }
+function openPreview() {
+    const blob = new Blob(
+        [state.files.html],
+        { type: "text/html;charset=utf-8" }
     );
 
+    const url = URL.createObjectURL(blob);
 
-    updateCodeEditor();
+    const tab = window.open(url, "_blank");
+
+    if (!tab) {
+        showToast("O navegador bloqueou a nova aba.");
+    }
+
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 60000);
 }
-
 
 /* =========================================================
-   ATUALIZAR INTERFACE
-========================================================= */
+   EDITOR
+   ========================================================= */
 
-function refreshUI() {
+function updateEditor() {
+    if (!els.codeEditor) return;
 
-    updatePreview();
+    els.codeEditor.value =
+        state.files[state.activeFile] || "";
 
-    updateCodeEditor();
-
-
-    const projectName =
-        $("#projectName");
-
-    if (projectName) {
-
-        projectName.textContent =
-            state.spec.projectName ||
-            "Meu novo site";
-    }
-
-
-    const breadcrumb =
-        $("#breadcrumbProject");
-
-    if (breadcrumb) {
-
-        breadcrumb.textContent =
-            state.spec.projectName ||
-            "Meu novo site";
-    }
+    els.codeTabs.forEach(tab => {
+        tab.classList.toggle(
+            "active",
+            tab.dataset.file === state.activeFile
+        );
+    });
 }
 
+function setActiveFile(file) {
+    if (!["html", "css", "js"].includes(file)) {
+        return;
+    }
+
+    state.activeFile = file;
+
+    updateEditor();
+}
+
+function saveEditorChanges() {
+    if (!els.codeEditor) return;
+
+    state.files[state.activeFile] =
+        els.codeEditor.value;
+
+    if (state.activeFile === "html") {
+        updatePreview();
+    }
+}
 
 /* =========================================================
    CHAT
-========================================================= */
+   ========================================================= */
 
-function addMessage(
-    type,
-    text
-) {
+function addUserMessage(text) {
+    if (!els.chatMessages) return;
 
-    const container =
-        $("#chatMessages");
+    const message = document.createElement("div");
 
-    if (!container) {
-        return;
-    }
-
-
-    const welcome =
-        container.querySelector(
-            ".welcome-card"
-        );
-
-
-    if (welcome) {
-        welcome.remove();
-    }
-
-
-    const message =
-        document.createElement(
-            "div"
-        );
-
-
-    message.className =
-        "message " +
-        (
-            type === "user"
-                ? "user"
-                : "ai"
-        );
-
+    message.className = "chat-message user-message";
 
     message.innerHTML = `
-
-        <div class="message-avatar">
-            ${
-                type === "user"
-                    ? "EU"
-                    : "✦"
-            }
+        <div class="message-content">
+            ${escapeHTML(text).replace(/\n/g, "<br>")}
         </div>
-
-        <div class="message-bubble">
-            ${escapeHTML(text)}
-        </div>
-
     `;
 
+    els.chatMessages.appendChild(message);
 
-    container.appendChild(
-        message
-    );
-
-
-    container.scrollTop =
-        container.scrollHeight;
+    scrollChat();
 }
 
+function addAIMessage(text) {
+    if (!els.chatMessages) return;
 
-function addLoadingMessage() {
+    const message = document.createElement("div");
 
-    const container =
-        $("#chatMessages");
-
-    if (!container) {
-        return null;
-    }
-
-
-    const message =
-        document.createElement(
-            "div"
-        );
-
-
-    message.className =
-        "message ai loading-message";
-
+    message.className = "chat-message ai-message";
 
     message.innerHTML = `
-
-        <div class="message-avatar">
-            ✦
+        <div class="message-content">
+            ${escapeHTML(text).replace(/\n/g, "<br>")}
         </div>
-
-        <div class="message-bubble">
-            Criando seu site...
-        </div>
-
     `;
 
+    els.chatMessages.appendChild(message);
 
-    container.appendChild(
-        message
-    );
+    scrollChat();
+}
 
+function addLoadingMessage() {
+    if (!els.chatMessages) return null;
 
-    container.scrollTop =
-        container.scrollHeight;
+    const message = document.createElement("div");
 
+    message.className = "chat-message ai-message loading-message";
+
+    message.innerHTML = `
+        <div class="message-content">
+            <span class="loading-dots">
+                Pensando<span>.</span><span>.</span><span>.</span>
+            </span>
+        </div>
+    `;
+
+    els.chatMessages.appendChild(message);
+
+    scrollChat();
 
     return message;
 }
 
+function scrollChat() {
+    if (!els.chatMessages) return;
 
-/* =========================================================
-   TOAST
-========================================================= */
-
-let toastTimer = null;
-
-
-function showToast(text) {
-
-    const toast =
-        $("#toast");
-
-    if (!toast) {
-        return;
-    }
-
-
-    toast.textContent =
-        text;
-
-
-    toast.classList.add(
-        "show"
-    );
-
-
-    clearTimeout(
-        toastTimer
-    );
-
-
-    toastTimer =
-        setTimeout(() => {
-
-            toast.classList.remove(
-                "show"
-            );
-
-        }, 2500);
+    els.chatMessages.scrollTop =
+        els.chatMessages.scrollHeight;
 }
-
 
 /* =========================================================
    HISTÓRICO
-========================================================= */
+   ========================================================= */
 
-function createSnapshot() {
-
-    return JSON.stringify({
-
-        spec:
-            state.spec,
-
-        files:
-            state.files
-    });
-}
-
-
-function saveHistory() {
-
-    const snapshot =
-        createSnapshot();
-
-
-    if (
-        state.historyIndex >= 0 &&
-        state.history[
-            state.historyIndex
-        ] === snapshot
-    ) {
-        return;
-    }
-
+function saveHistoryState() {
+    const snapshot = {
+        spec: clone(state.spec),
+        files: clone(state.files)
+    };
 
     state.history =
-        state.history.slice(
-            0,
-            state.historyIndex + 1
-        );
+        state.history.slice(0, state.historyIndex + 1);
 
+    state.history.push(snapshot);
 
-    state.history.push(
-        snapshot
-    );
-
-
-    if (
-        state.history.length > 30
-    ) {
-
+    if (state.history.length > 30) {
         state.history.shift();
     }
 
-
     state.historyIndex =
         state.history.length - 1;
+
+    updateHistoryButtons();
+
+    persistProject();
 }
 
-
-function restoreSnapshot(
-    snapshot
-) {
-
-    try {
-
-        const data =
-            JSON.parse(
-                snapshot
-            );
-
-
-        state.spec =
-            normalizeSpec(
-                data.spec
-            );
-
-
-        state.files = {
-
-            html:
-                data.files?.html ||
-                "",
-
-            css:
-                data.files?.css ||
-                "",
-
-            js:
-                data.files?.js ||
-                ""
-        };
-
-
-        saveLocal();
-
-        refreshUI();
-
-    } catch (error) {
-
-        console.error(
-            error
-        );
-
-        showToast(
-            "Não foi possível restaurar."
-        );
-    }
-}
-
-
-function undo() {
-
+function restoreHistory(index) {
     if (
-        state.historyIndex <= 0
+        index < 0 ||
+        index >= state.history.length
     ) {
-
-        showToast(
-            "Nada para desfazer."
-        );
-
         return;
     }
 
+    const snapshot = state.history[index];
 
-    state.historyIndex--;
+    state.spec = clone(snapshot.spec);
+    state.files = clone(snapshot.files);
 
+    state.historyIndex = index;
 
-    restoreSnapshot(
-        state.history[
-            state.historyIndex
-        ]
-    );
+    updateProjectName();
+    updateEditor();
+    updatePreview();
+    updateHistoryButtons();
+
+    persistProject();
 }
 
+function undo() {
+    if (state.historyIndex <= 0) {
+        showToast("Nada para desfazer.");
+        return;
+    }
+
+    restoreHistory(state.historyIndex - 1);
+    showToast("Alteração desfeita.");
+}
 
 function redo() {
-
     if (
         state.historyIndex >=
         state.history.length - 1
     ) {
-
-        showToast(
-            "Nada para refazer."
-        );
-
+        showToast("Nada para refazer.");
         return;
     }
 
-
-    state.historyIndex++;
-
-
-    restoreSnapshot(
-        state.history[
-            state.historyIndex
-        ]
-    );
+    restoreHistory(state.historyIndex + 1);
+    showToast("Alteração refeita.");
 }
 
+function updateHistoryButtons() {
+    if (els.undoBtn) {
+        els.undoBtn.disabled =
+            state.historyIndex <= 0;
+    }
+
+    if (els.redoBtn) {
+        els.redoBtn.disabled =
+            state.historyIndex >= state.history.length - 1;
+    }
+}
 
 /* =========================================================
    LOCAL STORAGE
-========================================================= */
+   ========================================================= */
 
-function saveLocal() {
-
+function persistProject() {
     try {
-
         localStorage.setItem(
-            PROJECT_STORAGE,
-
+            STORAGE.project,
             JSON.stringify({
-
-                spec:
-                    state.spec,
-
-                files:
-                    state.files
+                spec: state.spec,
+                files: state.files,
+                history: state.history,
+                historyIndex: state.historyIndex
             })
         );
-
     } catch (error) {
-
         console.warn(
-            "Não foi possível salvar.",
+            "Não foi possível salvar o projeto.",
             error
         );
     }
 }
 
-
-function loadLocal() {
-
+function loadProject() {
     try {
+        const raw =
+            localStorage.getItem(STORAGE.project);
 
-        const saved =
-            localStorage.getItem(
-                PROJECT_STORAGE
-            );
-
-
-        if (!saved) {
-
-            state.spec =
-                createEmptySpec();
-
-            state.files =
-                generateFiles(
-                    state.spec
-                );
-
-            return;
+        if (!raw) {
+            return false;
         }
 
+        const saved = JSON.parse(raw);
 
-        const data =
-            JSON.parse(
-                saved
-            );
+        if (saved.spec) {
+            state.spec =
+                normalizeSpec(saved.spec);
+        }
 
-
-        state.spec =
-            normalizeSpec(
-                data.spec
-            );
-
+        if (saved.files) {
+            state.files = {
+                html: saved.files.html || "",
+                css: saved.files.css || "",
+                js: saved.files.js || ""
+            };
+        }
 
         if (
-            data.files &&
-            data.files.html
+            Array.isArray(saved.history) &&
+            saved.history.length
         ) {
-
-            state.files =
-                data.files;
-
-        } else {
-
-            state.files =
-                generateFiles(
-                    state.spec
-                );
+            state.history = saved.history;
+            state.historyIndex =
+                Number.isInteger(saved.historyIndex)
+                    ? saved.historyIndex
+                    : saved.history.length - 1;
         }
 
-    } catch (error) {
+        return true;
 
+    } catch (error) {
         console.warn(
             "Projeto salvo inválido.",
             error
         );
 
-
-        state.spec =
-            createEmptySpec();
-
-
-        state.files =
-            generateFiles(
-                state.spec
-            );
+        return false;
     }
-
-
-    saveHistory();
 }
 
-
 /* =========================================================
-   NOVO PROJETO
-========================================================= */
+   PROJETO
+   ========================================================= */
 
-function newProject() {
+function updateProjectName() {
+    const name =
+        state.spec.projectName || "Meu site";
 
-    const confirmed =
-        confirm(
-            "Criar um novo site? O projeto atual será substituído."
-        );
-
-
-    if (!confirmed) {
-        return;
+    if (els.projectName) {
+        els.projectName.textContent = name;
     }
 
+    if (els.topProjectName) {
+        els.topProjectName.textContent = name;
+    }
+}
 
-    state.spec =
-        createEmptySpec();
+function resetProject() {
+    state.spec = createEmptySpec();
 
+    state.files = {
+        html: "",
+        css: "",
+        js: ""
+    };
 
-    state.files =
-        generateFiles(
-            state.spec
-        );
+    state.history = [];
+    state.historyIndex = -1;
 
+    rebuildFiles();
 
-    state.history =
-        [];
+    saveHistoryState();
 
+    updateProjectName();
 
-    state.historyIndex =
-        -1;
-
-
-    saveHistory();
-
-    saveLocal();
-
-
-    const chat =
-        $("#chatMessages");
-
-
-    if (chat) {
-
-        chat.innerHTML = `
-
+    if (els.chatMessages) {
+        els.chatMessages.innerHTML = `
             <div class="welcome-card">
 
-                <div class="welcome-icon">
-                    ✦
-                </div>
+                <div class="welcome-icon">✦</div>
 
-                <h2>
-                    Vamos criar algo incrível.
-                </h2>
+                <h2>Que site vamos criar?</h2>
 
                 <p>
-                    Descreva o site que você quer e a IA vai montar o design para você.
+                    Fale normalmente. Você pode começar do zero,
+                    pedir alterações ou melhorar o design.
                 </p>
 
             </div>
-
         `;
     }
 
+    setStatus("Pronto para criar");
 
-    refreshUI();
+    persistProject();
 
-    showToast(
-        "Novo projeto criado."
-    );
+    showToast("Novo site criado.");
 }
-
-
-/* =========================================================
-   API KEY
-========================================================= */
-
-function openSettings() {
-
-    const modal =
-        $("#settingsModal");
-
-    if (!modal) {
-        return;
-    }
-
-
-    modal.classList.remove(
-        "hidden"
-    );
-
-
-    const input =
-        $("#apiKeyInput");
-
-
-    if (input) {
-
-        input.value =
-            state.apiKey;
-
-        input.focus();
-    }
-}
-
-
-function closeSettings() {
-
-    const modal =
-        $("#settingsModal");
-
-    if (!modal) {
-        return;
-    }
-
-
-    modal.classList.add(
-        "hidden"
-    );
-}
-
-
-function saveApiKey() {
-
-    const input =
-        $("#apiKeyInput");
-
-    if (!input) {
-        return;
-    }
-
-
-    const key =
-        input.value.trim();
-
-
-    if (!key) {
-
-        showToast(
-            "Digite sua API Key."
-        );
-
-        return;
-    }
-
-
-    state.apiKey =
-        key;
-
-
-    localStorage.setItem(
-        API_STORAGE,
-        key
-    );
-
-
-    closeSettings();
-
-    updateConnectionStatus();
-
-
-    showToast(
-        "API Key salva."
-    );
-}
-
-
-function updateConnectionStatus() {
-
-    const dot =
-        $(".connection-dot");
-
-
-    const text =
-        $(".connection-text");
-
-
-    if (dot) {
-
-        dot.style.background =
-            state.apiKey
-                ? "#32c77b"
-                : "#f0ad36";
-    }
-
-
-    if (text) {
-
-        text.textContent =
-            state.apiKey
-                ? "Groq conectada"
-                : "API não configurada";
-    }
-}
-
-
-/* =========================================================
-   ENVIAR PEDIDO
-========================================================= */
-
-async function sendPrompt() {
-
-    const textarea =
-        $("#prompt");
-
-
-    if (!textarea) {
-        return;
-    }
-
-
-    const prompt =
-        textarea.value.trim();
-
-
-    if (!prompt) {
-        return;
-    }
-
-
-    if (!state.apiKey) {
-
-        openSettings();
-
-        showToast(
-            "Configure sua API Key primeiro."
-        );
-
-        return;
-    }
-
-
-    if (state.loading) {
-        return;
-    }
-
-
-    state.loading =
-        true;
-
-
-    const sendButton =
-        $("#sendButton");
-
-
-    if (sendButton) {
-
-        sendButton.disabled =
-            true;
-    }
-
-
-    textarea.value = "";
-
-    textarea.style.height =
-        "auto";
-
-
-    addMessage(
-        "user",
-        prompt
-    );
-
-
-    const loading =
-        addLoadingMessage();
-
-
-    const mode =
-        detectIntent(
-            prompt
-        );
-
-
-    try {
-
-        const response =
-            await callGroq(
-                prompt,
-                state.spec,
-                mode
-            );
-
-
-        const newSpec =
-            normalizeSpec(
-                parseJSON(
-                    response
-                )
-            );
-
-
-        state.spec =
-            newSpec;
-
-
-        state.files =
-            generateFiles(
-                newSpec
-            );
-
-
-        saveHistory();
-
-        saveLocal();
-
-        refreshUI();
-
-
-        if (loading) {
-            loading.remove();
-        }
-
-
-        addMessage(
-
-            "ai",
-
-            mode === "replace"
-
-                ? "Pronto. Criei um novo site do zero."
-
-                : "Pronto. Atualizei o site de acordo com seu pedido."
-        );
-
-
-        showToast(
-            "Site atualizado."
-        );
-
-
-    } catch (error) {
-
-        console.error(
-            "Forge AI:",
-            error
-        );
-
-
-        if (loading) {
-            loading.remove();
-        }
-
-
-        addMessage(
-            "ai",
-            "Não consegui gerar o site: " +
-            error.message
-        );
-
-
-        showToast(
-            "Erro ao gerar o site."
-        );
-
-
-    } finally {
-
-        state.loading =
-            false;
-
-
-        if (sendButton) {
-
-            sendButton.disabled =
-                false;
-        }
-
-
-        textarea.focus();
-    }
-}
-
 
 /* =========================================================
    MELHORAR DESIGN
-========================================================= */
+   ========================================================= */
 
 async function improveDesign() {
+    if (state.generating) return;
 
-    if (!state.apiKey) {
+    const apiKey = getApiKey();
 
+    if (!apiKey) {
         openSettings();
 
-        showToast(
-            "Configure sua API Key primeiro."
-        );
+        showToast("Configure sua Groq API Key primeiro.");
 
         return;
     }
 
+    const loading = addLoadingMessage();
 
-    if (state.loading) {
-        return;
-    }
+    state.generating = true;
 
-
-    state.loading =
-        true;
-
-
-    const loading =
-        addLoadingMessage();
-
+    setStatus("Melhorando design...");
 
     try {
+        const result = await askGroq(
+            `
+Melhore significativamente o design visual do site atual.
 
-        const response =
-            await callGroq(
-
-                `
-Melhore o design atual do site.
-
-Deixe ele muito mais profissional,
-bonito, moderno e organizado.
+Não troque o negócio principal.
+Não remova conteúdo importante.
 
 Melhore:
-
-- tipografia
+- hierarquia visual
 - cores
+- tipografia
 - espaçamento
-- hierarquia
-- imagens
-- composição
+- textos
+- aparência premium
+- organização das seções
 - experiência mobile
-- aparência geral
+- imagens
 
-Não altere o objetivo principal do projeto.
-`,
-
-                state.spec,
-
-                "update"
-            );
-
-
-        state.spec =
-            normalizeSpec(
-                parseJSON(
-                    response
-                )
-            );
-
-
-        state.files =
-            generateFiles(
-                state.spec
-            );
-
-
-        saveHistory();
-
-        saveLocal();
-
-        refreshUI();
-
-
-        if (loading) {
-            loading.remove();
-        }
-
-
-        addMessage(
-            "ai",
-            "Melhorei o design do site."
+Retorne o JSON completo atualizado.
+            `,
+            "improve"
         );
 
+        const normalized =
+            normalizeSpec(result);
 
-        showToast(
-            "Design melhorado."
+        state.spec = normalized;
+
+        rebuildFiles();
+
+        saveHistoryState();
+
+        updateProjectName();
+
+        setStatus("Design melhorado");
+
+        addAIMessage(
+            "Pronto. Melhorei o visual e reorganizei o design do site."
         );
 
+        showToast("Design melhorado.");
 
     } catch (error) {
+        console.error(error);
+
+        addAIMessage(
+            `Não consegui melhorar o site: ${error.message}`
+        );
+
+        setStatus("Erro");
+
+        showToast(error.message);
+
+    } finally {
+        state.generating = false;
 
         if (loading) {
             loading.remove();
         }
+    }
+}
 
+/* =========================================================
+   GERAR / ALTERAR SITE
+   ========================================================= */
 
+async function generateFromPrompt() {
+    if (state.generating) return;
+
+    const prompt =
+        els.promptInput?.value.trim() || "";
+
+    if (!prompt) {
+        showToast("Digite o que você quer criar.");
+
+        els.promptInput?.focus();
+
+        return;
+    }
+
+    const apiKey = getApiKey();
+
+    if (!apiKey) {
+        openSettings();
+
+        showToast("Configure sua Groq API Key primeiro.");
+
+        return;
+    }
+
+    const mode = detectIntent(prompt);
+
+    addUserMessage(prompt);
+
+    if (els.promptInput) {
+        els.promptInput.value = "";
+        autoResizeTextarea();
+    }
+
+    const loading = addLoadingMessage();
+
+    state.generating = true;
+
+    setStatus(
+        mode === "new"
+            ? "Criando novo site..."
+            : "Gerando alterações..."
+    );
+
+    if (els.sendBtn) {
+        els.sendBtn.disabled = true;
+    }
+
+    try {
+        if (mode === "new") {
+            state.spec = createEmptySpec();
+        }
+
+        const result =
+            await askGroq(prompt, mode);
+
+        state.spec =
+            normalizeSpec(result);
+
+        rebuildFiles();
+
+        saveHistoryState();
+
+        updateProjectName();
+
+        setStatus("Site atualizado");
+
+        addAIMessage(
+            mode === "new"
+                ? "Site criado! Você pode pedir alterações pelo chat."
+                : "Alteração aplicada! Pode continuar pedindo mudanças."
+        );
+
+        showToast("Site atualizado com sucesso.");
+
+    } catch (error) {
         console.error(
+            "Erro ao gerar site:",
             error
         );
 
-
-        addMessage(
-            "ai",
-            "Não consegui melhorar o design: " +
-            error.message
+        addAIMessage(
+            `Erro: ${error.message}`
         );
 
-    } finally {
+        setStatus("Erro ao gerar");
 
-        state.loading =
-            false;
+        showToast(error.message);
+
+    } finally {
+        state.generating = false;
+
+        if (els.sendBtn) {
+            els.sendBtn.disabled = false;
+        }
+
+        if (loading) {
+            loading.remove();
+        }
+
+        updateConnectionStatus();
     }
 }
 
-
 /* =========================================================
-   DOWNLOAD
-========================================================= */
+   CONFIGURAÇÕES
+   ========================================================= */
 
-function downloadFile(
-    filename,
-    content
-) {
+function openSettings() {
+    if (!els.settingsModal) return;
 
-    const blob =
-        new Blob(
-            [content],
-            {
-                type:
-                    "text/plain;charset=utf-8"
-            }
+    if (els.apiKeyInput) {
+        els.apiKeyInput.value = getApiKey();
+    }
+
+    if (els.modelInput) {
+        els.modelInput.value = getModel();
+    }
+
+    els.settingsModal.classList.remove("hidden");
+}
+
+function closeSettings() {
+    if (!els.settingsModal) return;
+
+    els.settingsModal.classList.add("hidden");
+}
+
+function saveSettings() {
+    const key =
+        els.apiKeyInput?.value.trim() || "";
+
+    const model =
+        els.modelInput?.value.trim() ||
+        DEFAULT_MODEL;
+
+    if (key) {
+        localStorage.setItem(
+            STORAGE.apiKey,
+            key
         );
-
-
-    const url =
-        URL.createObjectURL(
-            blob
+    } else {
+        localStorage.removeItem(
+            STORAGE.apiKey
         );
+    }
 
-
-    const link =
-        document.createElement(
-            "a"
-        );
-
-
-    link.href =
-        url;
-
-    link.download =
-        filename;
-
-
-    document.body.appendChild(
-        link
+    localStorage.setItem(
+        STORAGE.model,
+        model
     );
 
+    setConnectionStatus();
+
+    closeSettings();
+
+    showToast(
+        key
+            ? "Configurações salvas."
+            : "API Key removida."
+    );
+}
+
+function updateConnectionStatus() {
+    setConnection(
+        Boolean(getApiKey())
+    );
+}
+
+/* =========================================================
+   EXPORTAR
+   ========================================================= */
+
+function downloadFile(filename, content, type) {
+    const blob = new Blob(
+        [content],
+        { type }
+    );
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
 
     link.click();
 
-
     link.remove();
 
-
-    URL.revokeObjectURL(
-        url
-    );
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 1000);
 }
-
 
 function downloadProject() {
+    const name =
+        slugify(state.spec.projectName);
 
     downloadFile(
-        "index.html",
-        state.files.html
+        `${name}.html`,
+        state.files.html,
+        "text/html;charset=utf-8"
     );
 
+    setTimeout(() => {
+        downloadFile(
+            `${name}-style.css`,
+            state.files.css,
+            "text/css;charset=utf-8"
+        );
+    }, 150);
 
-    setTimeout(
-        () => {
+    setTimeout(() => {
+        downloadFile(
+            `${name}-script.js`,
+            state.files.js,
+            "text/javascript;charset=utf-8"
+        );
+    }, 300);
 
-            downloadFile(
-                "style.css",
-                state.files.css
-            );
-
-        },
-        150
-    );
-
-
-    setTimeout(
-        () => {
-
-            downloadFile(
-                "script.js",
-                state.files.js
-            );
-
-        },
-        300
-    );
-
-
-    showToast(
-        "Arquivos baixados."
-    );
+    showToast("Arquivos exportados.");
 }
 
-
 /* =========================================================
-   COPIAR
-========================================================= */
+   COPIAR CÓDIGO
+   ========================================================= */
 
 async function copyCode() {
+    const text =
+        els.codeEditor?.value || "";
 
-    const code =
-        state.files[
-            state.activeCodeTab
-        ] || "";
-
-
-    if (!code) {
+    if (!text) {
+        showToast("Não há código para copiar.");
         return;
     }
-
 
     try {
+        await navigator.clipboard.writeText(text);
 
-        await navigator.clipboard.writeText(
-            code
-        );
+        showToast("Código copiado.");
 
+    } catch (_) {
+        if (els.codeEditor) {
+            els.codeEditor.select();
 
-        showToast(
-            "Código copiado."
-        );
+            document.execCommand("copy");
 
-    } catch {
-
-        const editor =
-            $("#codeEditor");
-
-
-        if (editor) {
-
-            editor.select();
-
-            document.execCommand(
-                "copy"
-            );
-
-            showToast(
-                "Código copiado."
-            );
+            els.codeEditor.setSelectionRange(0, 0);
         }
+
+        showToast("Código copiado.");
     }
 }
-
-
-/* =========================================================
-   EDITOR
-========================================================= */
-
-function saveEditorChanges() {
-
-    const editor =
-        $("#codeEditor");
-
-
-    if (!editor) {
-        return;
-    }
-
-
-    state.files[
-        state.activeCodeTab
-    ] =
-        editor.value;
-
-
-    if (
-        state.activeCodeTab ===
-        "html"
-    ) {
-
-        updatePreview();
-    }
-
-
-    saveLocal();
-}
-
 
 /* =========================================================
    DISPOSITIVOS
-========================================================= */
+   ========================================================= */
 
 function setDevice(device) {
+    if (!els.browserFrame) return;
 
-    const frame =
-        $(".browser-frame");
-
-
-    if (!frame) {
-        return;
-    }
-
-
-    frame.classList.remove(
+    els.browserFrame.classList.remove(
+        "desktop",
         "tablet",
         "mobile"
     );
 
-
-    if (device === "tablet") {
-
-        frame.classList.add(
-            "tablet"
-        );
-    }
-
-
-    if (device === "mobile") {
-
-        frame.classList.add(
-            "mobile"
-        );
-    }
-
-
-    $$(".device-button")
-        .forEach(button => {
-
-            button.classList.toggle(
-
-                "active",
-
-                button.dataset.device ===
-                device
-
-            );
-
-        });
-}
-
-
-/* =========================================================
-   FULLSCREEN
-========================================================= */
-
-function toggleFullscreen() {
-
-    const frame =
-        $(".browser-frame");
-
-
-    if (!frame) {
-        return;
-    }
-
-
-    if (
-        !document.fullscreenElement
-    ) {
-
-        if (
-            frame.requestFullscreen
-        ) {
-
-            frame.requestFullscreen();
-        }
-
-    } else {
-
-        if (
-            document.exitFullscreen
-        ) {
-
-            document.exitFullscreen();
-        }
-    }
-}
-
-
-/* =========================================================
-   SUGESTÕES
-========================================================= */
-
-function useSuggestion(text) {
-
-    const textarea =
-        $("#prompt");
-
-
-    if (!textarea) {
-        return;
-    }
-
-
-    textarea.value =
-        text;
-
-
-    textarea.focus();
-
-
-    textarea.dispatchEvent(
-        new Event("input")
+    els.browserFrame.classList.add(
+        device
     );
+
+    $$(".device-button").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.device === device
+        );
+    });
 }
 
+/* =========================================================
+   TEXTAREA
+   ========================================================= */
+
+function autoResizeTextarea() {
+    if (!els.promptInput) return;
+
+    els.promptInput.style.height = "auto";
+
+    els.promptInput.style.height =
+        Math.min(
+            els.promptInput.scrollHeight,
+            180
+        ) + "px";
+}
 
 /* =========================================================
    EVENTOS
-========================================================= */
+   ========================================================= */
 
 function setupEvents() {
 
-    const sendButton =
-        $("#sendButton");
+    /* Novo projeto */
 
+    els.newProjectBtn?.addEventListener(
+        "click",
+        resetProject
+    );
 
-    if (sendButton) {
+    /* Undo */
 
-        sendButton.addEventListener(
+    els.undoBtn?.addEventListener(
+        "click",
+        undo
+    );
+
+    /* Redo */
+
+    els.redoBtn?.addEventListener(
+        "click",
+        redo
+    );
+
+    /* Melhorar */
+
+    els.improveBtn?.addEventListener(
+        "click",
+        improveDesign
+    );
+
+    /* Configurações */
+
+    els.settingsBtn?.addEventListener(
+        "click",
+        openSettings
+    );
+
+    els.closeSettings?.addEventListener(
+        "click",
+        closeSettings
+    );
+
+    els.saveSettings?.addEventListener(
+        "click",
+        saveSettings
+    );
+
+    els.settingsModal
+        ?.querySelector(".modal-backdrop")
+        ?.addEventListener(
             "click",
-            sendPrompt
+            closeSettings
         );
-    }
 
+    /* Salvar */
 
-    const prompt =
-        $("#prompt");
+    els.saveBtn?.addEventListener(
+        "click",
+        () => {
+            saveEditorChanges();
 
+            persistProject();
 
-    if (prompt) {
+            showToast("Projeto salvo.");
+        }
+    );
 
-        prompt.addEventListener(
-            "keydown",
-            event => {
+    /* Exportar */
 
-                if (
-                    event.key === "Enter" &&
-                    !event.shiftKey
-                ) {
+    els.downloadBtn?.addEventListener(
+        "click",
+        downloadProject
+    );
 
-                    event.preventDefault();
+    /* Gerar */
 
-                    sendPrompt();
-                }
+    els.sendBtn?.addEventListener(
+        "click",
+        generateFromPrompt
+    );
+
+    /* Enter */
+
+    els.promptInput?.addEventListener(
+        "keydown",
+        event => {
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+
+                generateFromPrompt();
             }
-        );
+        }
+    );
 
+    els.promptInput?.addEventListener(
+        "input",
+        autoResizeTextarea
+    );
 
-        prompt.addEventListener(
-            "input",
+    /* Sugestões */
+
+    $$(".suggestion").forEach(button => {
+
+        button.addEventListener(
+            "click",
             () => {
 
-                prompt.style.height =
-                    "auto";
+                const prompt =
+                    button.dataset.prompt || "";
 
+                if (els.promptInput) {
+                    els.promptInput.value =
+                        prompt;
 
-                prompt.style.height =
-                    Math.min(
-                        prompt.scrollHeight,
-                        120
-                    ) + "px";
+                    autoResizeTextarea();
+
+                    els.promptInput.focus();
+                }
             }
         );
-    }
 
+    });
 
-    const newProjectButton =
-        $("#newProject");
+    /* Preview */
 
+    els.refreshPreview?.addEventListener(
+        "click",
+        refreshPreview
+    );
 
-    if (newProjectButton) {
+    els.openPreview?.addEventListener(
+        "click",
+        openPreview
+    );
 
-        newProjectButton.addEventListener(
+    /* Dispositivos */
+
+    $$(".device-button").forEach(button => {
+
+        button.addEventListener(
             "click",
-            newProject
+            () => {
+                setDevice(
+                    button.dataset.device
+                );
+            }
         );
-    }
 
+    });
 
-    const undoButton =
-        $("#undoBtn");
+    /* Tabs de código */
 
+    els.codeTabs.forEach(tab => {
 
-    if (undoButton) {
-
-        undoButton.addEventListener(
+        tab.addEventListener(
             "click",
-            undo
+            () => {
+                saveEditorChanges();
+
+                setActiveFile(
+                    tab.dataset.file
+                );
+            }
         );
-    }
 
+    });
 
-    const redoButton =
-        $("#redoBtn");
+    /* Editor */
 
+    els.codeEditor?.addEventListener(
+        "input",
+        debounce(() => {
+            saveEditorChanges();
+        }, 200)
+    );
 
-    if (redoButton) {
+    /* Copiar */
 
-        redoButton.addEventListener(
-            "click",
-            redo
-        );
-    }
+    els.copyCodeBtn?.addEventListener(
+        "click",
+        copyCode
+    );
 
-
-    const improveButton =
-        $("#improveBtn");
-
-
-    if (improveButton) {
-
-        improveButton.addEventListener(
-            "click",
-            improveDesign
-        );
-    }
-
-
-    const settingsButton =
-        $("#settingsBtn");
-
-
-    if (settingsButton) {
-
-        settingsButton.addEventListener(
-            "click",
-            openSettings
-        );
-    }
-
-
-    const closeModal =
-        $("#closeModal");
-
-
-    if (closeModal) {
-
-        closeModal.addEventListener(
-            "click",
-            closeSettings
-        );
-    }
-
-
-    const saveKey =
-        $("#saveApiKey");
-
-
-    if (saveKey) {
-
-        saveKey.addEventListener(
-            "click",
-            saveApiKey
-        );
-    }
-
-
-    const backdrop =
-        $(".modal-backdrop");
-
-
-    if (backdrop) {
-
-        backdrop.addEventListener(
-            "click",
-            closeSettings
-        );
-    }
-
-
-    const downloadButton =
-        $("#downloadBtn");
-
-
-    if (downloadButton) {
-
-        downloadButton.addEventListener(
-            "click",
-            downloadProject
-        );
-    }
-
-
-    const copyButton =
-        $("#copyCodeBtn");
-
-
-    if (copyButton) {
-
-        copyButton.addEventListener(
-            "click",
-            copyCode
-        );
-    }
-
-
-    const editor =
-        $("#codeEditor");
-
-
-    if (editor) {
-
-        editor.addEventListener(
-            "input",
-            saveEditorChanges
-        );
-    }
-
-
-    $$(".code-tab")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    setActiveCodeTab(
-                        button.dataset.tab
-                    );
-                }
-            );
-
-        });
-
-
-    $$(".device-button")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    setDevice(
-                        button.dataset.device
-                    );
-                }
-            );
-
-        });
-
-
-    const fullscreenButton =
-        $("#fullscreenBtn");
-
-
-    if (fullscreenButton) {
-
-        fullscreenButton.addEventListener(
-            "click",
-            toggleFullscreen
-        );
-    }
-
-
-    $$(".suggestion")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    const text =
-                        button.dataset.prompt ||
-                        button.querySelector(
-                            "strong"
-                        )?.textContent ||
-                        "";
-
-                    useSuggestion(
-                        text
-                    );
-                }
-            );
-
-        });
-
+    /* Teclas */
 
     document.addEventListener(
         "keydown",
         event => {
 
-            if (
-                event.key === "Escape"
-            ) {
+            const ctrl =
+                event.ctrlKey ||
+                event.metaKey;
 
-                closeSettings();
+            if (!ctrl) return;
+
+            if (
+                event.key.toLowerCase() === "z" &&
+                !event.shiftKey
+            ) {
+                event.preventDefault();
+
+                undo();
+            }
+
+            if (
+                event.key.toLowerCase() === "y" ||
+                (
+                    event.key.toLowerCase() === "z" &&
+                    event.shiftKey
+                )
+            ) {
+                event.preventDefault();
+
+                redo();
             }
         }
     );
+
+    /* ESC */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Escape") {
+                closeSettings();
+            }
+
+        }
+    );
 }
-
-
-/* =========================================================
-   FUNÇÕES DO SITE GERADO
-========================================================= */
-
-window.toggleMenu =
-    function() {
-
-        const menu =
-            document.getElementById(
-                "mobileMenu"
-            );
-
-
-        if (menu) {
-
-            menu.classList.toggle(
-                "open"
-            );
-        }
-    };
-
-
-window.closeMenu =
-    function() {
-
-        const menu =
-            document.getElementById(
-                "mobileMenu"
-            );
-
-
-        if (menu) {
-
-            menu.classList.remove(
-                "open"
-            );
-        }
-    };
-
-
-window.toggleFAQ =
-    function(index) {
-
-        const answer =
-            document.getElementById(
-                "faq-answer-" +
-                index
-            );
-
-
-        const icon =
-            document.getElementById(
-                "faq-icon-" +
-                index
-            );
-
-
-        if (!answer) {
-            return;
-        }
-
-
-        const opened =
-            answer.classList.toggle(
-                "open"
-            );
-
-
-        if (icon) {
-
-            icon.textContent =
-                opened
-                    ? "−"
-                    : "+";
-        }
-    };
-
-
-window.submitContact =
-    function(event) {
-
-        event.preventDefault();
-
-
-        const form =
-            event.target;
-
-
-        const button =
-            form.querySelector(
-                "button"
-            );
-
-
-        if (!button) {
-            return;
-        }
-
-
-        const original =
-            button.textContent;
-
-
-        button.textContent =
-            "Mensagem enviada ✓";
-
-
-        button.disabled =
-            true;
-
-
-        setTimeout(
-            () => {
-
-                form.reset();
-
-                button.textContent =
-                    original;
-
-                button.disabled =
-                    false;
-
-            },
-            2200
-        );
-    };
-
 
 /* =========================================================
    INICIALIZAÇÃO
-========================================================= */
+   ========================================================= */
 
 function init() {
 
-    loadLocal();
+    const loaded =
+        loadProject();
 
-    setupEvents();
+    if (!loaded) {
+        rebuildFiles();
+
+        saveHistoryState();
+    } else {
+
+        /*
+         * Se o projeto antigo não tiver
+         * arquivos válidos, reconstrói.
+         */
+        if (
+            !state.files.html ||
+            !state.files.css
+        ) {
+            rebuildFiles();
+        }
+    }
+
+    updateProjectName();
+
+    updateEditor();
+
+    updatePreview();
+
+    updateHistoryButtons();
 
     updateConnectionStatus();
 
-    refreshUI();
+    setDevice("desktop");
 
-    setDevice(
-        "desktop"
+    setupEvents();
+
+    autoResizeTextarea();
+
+    setStatus(
+        loaded
+            ? "Projeto carregado"
+            : "Pronto para criar"
     );
-
 
     console.log(
-        "Forge AI iniciado corretamente."
+        "Forge inicializado corretamente."
     );
 }
 
-
-/* =========================================================
-   START
-========================================================= */
-
-if (
-    document.readyState ===
-    "loading"
-) {
-
-    document.addEventListener(
-        "DOMContentLoaded",
-        init
-    );
-
-} else {
-
-    init();
-}
+init();
