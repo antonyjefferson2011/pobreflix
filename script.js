@@ -1,1846 +1,1005 @@
-/* =========================================================
-   FORGEAI V1
-   Construtor de sites por conversa
-   ========================================================= */
-
-
-/* =========================================================
-   CONFIGURAÇÃO
-   ========================================================= */
-
-const GROQ_API_URL =
-    "https://api.groq.com/openai/v1/chat/completions";
-
-let apiKey =
-    localStorage.getItem("forgeai_groq_key") || "";
-
-let selectedModel =
-    localStorage.getItem("forgeai_model") ||
-    "llama-3.3-70b-versatile";
-
-
-/* =========================================================
-   ESTADO
-   ========================================================= */
-
-const state = {
-
-    projectName:
-        localStorage.getItem("forgeai_project_name") ||
-        "Meu site",
-
-    files: {
-
-        html:
-            localStorage.getItem("forgeai_html") ||
-            "",
-
-        css:
-            localStorage.getItem("forgeai_css") ||
-            "",
-
-        js:
-            localStorage.getItem("forgeai_js") ||
-            ""
-
-    },
-
-    activeFile: "html",
-
-    messages: [],
-
-    history: [],
-
-    isGenerating: false
-
-};
-
-
-/* =========================================================
-   ELEMENTOS
-   ========================================================= */
-
-const $ = id =>
-    document.getElementById(id);
-
-const messagesEl =
-    $("messages");
-
-const userInput =
-    $("userInput");
-
-const sendBtn =
-    $("sendBtn");
-
-const codeEditor =
-    $("codeEditor");
-
-const lineNumbers =
-    $("lineNumbers");
-
-const previewFrame =
-    $("previewFrame");
-
-const emptyPreview =
-    $("emptyPreview");
-
-const projectName =
-    $("projectName");
-
-const topProjectName =
-    $("topProjectName");
-
-const saveStatus =
-    $("saveStatus");
-
-const apiStatus =
-    $("apiStatus");
-
-const statusDot =
-    document.querySelector(".status-dot");
-
-
-/* =========================================================
-   INICIALIZAÇÃO
-   ========================================================= */
-
-document.addEventListener("DOMContentLoaded", () => {
-
-    updateProjectName();
-
-    updateApiStatus();
-
-    loadEditor();
-
-    updateLineNumbers();
-
-    if (
-        state.files.html ||
-        state.files.css ||
-        state.files.js
-    ) {
-        updatePreview();
-    }
-
-    setupEvents();
-
-});
-
-
-/* =========================================================
-   EVENTOS
-   ========================================================= */
-
-function setupEvents() {
-
-    sendBtn.addEventListener(
-        "click",
-        sendMessage
-    );
-
-
-    userInput.addEventListener(
-        "keydown",
-        event => {
-
-            if (
-                event.key === "Enter" &&
-                !event.shiftKey
-            ) {
-
-                event.preventDefault();
-
-                sendMessage();
-
-            }
-
-        }
-    );
-
-
-    userInput.addEventListener(
-        "input",
-        autoResizeTextarea
-    );
-
-
-    document
-        .querySelectorAll(".suggestion")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    userInput.value =
-                        button.textContent.trim();
-
-                    autoResizeTextarea();
-
-                    userInput.focus();
-
-                }
-            );
-
-        });
-
-
-    document
-        .querySelectorAll(".code-tab")
-        .forEach(tab => {
-
-            tab.addEventListener(
-                "click",
-                () => {
-
-                    saveCurrentEditor();
-
-                    state.activeFile =
-                        tab.dataset.file;
-
-                    loadEditor();
-
-                    document
-                        .querySelectorAll(".code-tab")
-                        .forEach(t =>
-                            t.classList.remove("active")
-                        );
-
-                    tab.classList.add("active");
-
-                }
-            );
-
-        });
-
-
-    codeEditor.addEventListener(
-        "input",
-        () => {
-
-            saveCurrentEditor();
-
-            updateLineNumbers();
-
-            updatePreviewDebounced();
-
-        }
-    );
-
-
-    codeEditor.addEventListener(
-        "scroll",
-        () => {
-
-            lineNumbers.scrollTop =
-                codeEditor.scrollTop;
-
-        }
-    );
-
-
-    $("saveBtn").addEventListener(
-        "click",
-        saveProject
-    );
-
-
-    $("downloadBtn").addEventListener(
-        "click",
-        downloadProject
-    );
-
-
-    $("newProjectBtn").addEventListener(
-        "click",
-        newProject
-    );
-
-
-    $("renameProjectBtn").addEventListener(
-        "click",
-        renameProject
-    );
-
-
-    $("refreshPreviewBtn").addEventListener(
-        "click",
-        updatePreview
-    );
-
-
-    $("openPreviewBtn").addEventListener(
-        "click",
-        openPreview
-    );
-
-
-    $("copyCodeBtn").addEventListener(
-        "click",
-        copyCode
-    );
-
-
-    $("formatCodeBtn").addEventListener(
-        "click",
-        formatCode
-    );
-
-
-    $("clearChatBtn").addEventListener(
-        "click",
-        clearChat
-    );
-
-
-    $("publishBtn").addEventListener(
-        "click",
-        () => {
-
-            showToast(
-                "Na V1, publicar significa baixar o projeto. Deploy automático entra na próxima versão."
-            );
-
-        }
-    );
-
-
-    document
-        .querySelectorAll(".device-btn")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    document
-                        .querySelectorAll(".device-btn")
-                        .forEach(b =>
-                            b.classList.remove("active")
-                        );
-
-                    button.classList.add("active");
-
-                    changeDevice(
-                        button.dataset.device
-                    );
-
-                }
-            );
-
-        });
-
-
-    $("apiModal")
-        .addEventListener(
-            "click",
-            event => {
-
-                if (
-                    event.target ===
-                    $("apiModal")
-                ) {
-
-                    closeApiModal();
-
-                }
-
-            }
-        );
-
-
-    $("closeApiModal")
-        .addEventListener(
-            "click",
-            closeApiModal
-        );
-
-
-    $("saveApiBtn")
-        .addEventListener(
-            "click",
-            saveApiConfig
-        );
-
+:root {
+    --bg: #f7f8fb;
+    --surface: #ffffff;
+    --surface-2: #f3f5f8;
+    --border: #e5e7eb;
+    --text: #17191f;
+    --muted: #737985;
+    --primary: #635bff;
+    --primary-dark: #5048e5;
+    --shadow: 0 10px 35px rgba(20, 25, 40, .07);
+    --radius: 14px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    font-family: "Inter", sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.app {
+    display: flex;
+    min-height: 100vh;
 }
 
 
-/* =========================================================
-   GROQ
-   ========================================================= */
-
-async function askGroq(userRequest) {
-
-    if (!apiKey) {
-
-        openApiModal();
-
-        throw new Error(
-            "API Key da Groq não configurada."
-        );
-
-    }
-
-
-    const projectContext = {
-
-        html: state.files.html,
-
-        css: state.files.css,
-
-        js: state.files.js
-
-    };
-
-
-    const systemPrompt = `
-Você é o motor de um construtor de sites chamado ForgeAI.
-
-Sua função é criar e modificar sites completos usando HTML, CSS e JavaScript puro.
-
-REGRAS IMPORTANTES:
-
-1. Sempre produza um site funcional.
-2. O HTML deve ser compatível com navegador moderno.
-3. CSS deve ficar separado do HTML.
-4. JavaScript deve ficar separado do HTML.
-5. Não use frameworks.
-6. Não use Markdown.
-7. Não use blocos de código.
-8. Não explique seu código antes ou depois.
-9. Quando o usuário pedir uma alteração, preserve o que já existe.
-10. Não apague funcionalidades existentes sem motivo.
-11. Pode usar imagens externas via URLs públicas quando necessário.
-12. O resultado deve ser visualmente profissional.
-13. O site deve ser responsivo.
-14. Use JavaScript apenas quando necessário.
-15. Retorne SEMPRE exatamente este formato:
-
-<FORGE_RESPONSE>
-<message>
-Uma explicação curta para o usuário.
-</message>
-
-<html>
-COLOQUE AQUI O INDEX.HTML COMPLETO
-</html>
-
-<css>
-COLOQUE AQUI O STYLE.CSS COMPLETO
-</css>
-
-<js>
-COLOQUE AQUI O SCRIPT.JS COMPLETO
-</js>
-</FORGE_RESPONSE>
-
-PROJETO ATUAL:
-
-INDEX.HTML:
-${projectContext.html || "(vazio)"}
-
-STYLE.CSS:
-${projectContext.css || "(vazio)"}
-
-SCRIPT.JS:
-${projectContext.js || "(vazio)"}
-`;
-
-
-    const conversation = [
-
-        {
-            role: "system",
-            content: systemPrompt
-        }
-
-    ];
-
-
-    /*
-       Mantemos algumas mensagens recentes
-       para a IA entender a conversa.
-    */
-
-    const recentMessages =
-        state.messages.slice(-8);
-
-    recentMessages.forEach(message => {
-
-        conversation.push({
-
-            role:
-                message.role === "user"
-                    ? "user"
-                    : "assistant",
-
-            content:
-                message.content
-
-        });
-
-    });
-
-
-    conversation.push({
-
-        role: "user",
-
-        content: userRequest
-
-    });
-
-
-    const response =
-        await fetch(
-            GROQ_API_URL,
-            {
-
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type":
-                        "application/json",
-
-                    "Authorization":
-                        `Bearer ${apiKey}`
-
-                },
-
-                body: JSON.stringify({
-
-                    model:
-                        selectedModel,
-
-                    messages:
-                        conversation,
-
-                    temperature:
-                        0.2,
-
-                    max_completion_tokens:
-                        16000
-
-                })
-
-            }
-        );
-
-
-    if (!response.ok) {
-
-        let errorText = "";
-
-        try {
-
-            const errorData =
-                await response.json();
-
-            errorText =
-                errorData?.error?.message ||
-                JSON.stringify(errorData);
-
-        } catch {
-
-            errorText =
-                await response.text();
-
-        }
-
-        throw new Error(
-            `Groq retornou ${response.status}: ${errorText}`
-        );
-
-    }
-
-
-    const data =
-        await response.json();
-
-
-    const result =
-        data?.choices?.[0]?.message?.content;
-
-
-    if (!result) {
-
-        throw new Error(
-            "A Groq não retornou conteúdo."
-        );
-
-    }
-
-
-    return result;
-
+/* =========================
+   SIDEBAR
+========================= */
+
+.sidebar {
+    width: 250px;
+    background: #fff;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 22px 16px;
+    flex-shrink: 0;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 0 8px 24px;
+}
+
+.brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--primary);
+    color: white;
+    font-weight: 800;
+    font-size: 18px;
+    box-shadow: 0 7px 18px rgba(99, 91, 255, .24);
+}
+
+.brand strong {
+    display: block;
+    font-size: 16px;
+    letter-spacing: -.3px;
+}
+
+.brand span {
+    display: block;
+    color: #9aa0aa;
+    font-size: 10px;
+    margin-top: 2px;
+}
+
+.new-project {
+    height: 44px;
+    border: 1px solid #ddd9ff;
+    background: #f7f6ff;
+    color: var(--primary);
+    border-radius: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    transition: .2s;
+}
+
+.new-project:hover {
+    background: #efedff;
+    transform: translateY(-1px);
+}
+
+.sidebar-section {
+    margin-bottom: 28px;
+}
+
+.sidebar-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #a1a6b0;
+    letter-spacing: .9px;
+    padding: 0 8px 10px;
+}
+
+.project-card {
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 11px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.project-icon {
+    width: 33px;
+    height: 33px;
+    border-radius: 9px;
+    background: #f0efff;
+    color: var(--primary);
+    display: grid;
+    place-items: center;
+}
+
+.project-info {
+    min-width: 0;
+}
+
+.project-info strong {
+    display: block;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-info span {
+    color: #9a9faa;
+    font-size: 10px;
+}
+
+.side-button {
+    width: 100%;
+    height: 38px;
+    border: 0;
+    background: transparent;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 9px;
+    color: #656b76;
+    font-size: 12px;
+    text-align: left;
+}
+
+.side-button:hover {
+    background: #f5f6f8;
+    color: var(--text);
+}
+
+.side-button span {
+    width: 18px;
+    font-size: 15px;
+}
+
+.side-button kbd {
+    margin-left: auto;
+    font-size: 9px;
+    color: #b0b4bb;
+}
+
+.sidebar-bottom {
+    margin-top: auto;
+}
+
+.connection {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: #8d929d;
+    padding: 10px 8px;
+}
+
+.connection-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #f0ad36;
+}
+
+.settings-button {
+    width: 100%;
+    height: 38px;
+    border: 0;
+    background: transparent;
+    color: #737985;
+    text-align: left;
+    padding: 0 8px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.settings-button:hover {
+    background: #f5f6f8;
 }
 
 
-/* =========================================================
-   PARSER DA RESPOSTA
-   ========================================================= */
+/* =========================
+   MAIN
+========================= */
 
-function parseForgeResponse(text) {
+.main {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
 
-    const messageMatch =
-        text.match(
-            /<message>([\s\S]*?)<\/message>/i
-        );
+.topbar {
+    height: 66px;
+    background: rgba(255,255,255,.92);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 26px;
+}
 
-    const htmlMatch =
-        text.match(
-            /<html>([\s\S]*?)<\/html>/i
-        );
+.breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+}
 
-    const cssMatch =
-        text.match(
-            /<css>([\s\S]*?)<\/css>/i
-        );
+.breadcrumbs span {
+    color: #a0a4ad;
+}
 
-    const jsMatch =
-        text.match(
-            /<js>([\s\S]*?)<\/js>/i
-        );
+.breadcrumbs b {
+    color: #c8cbd0;
+}
 
+.breadcrumbs strong {
+    color: #3d414a;
+}
 
-    let html =
-        htmlMatch
-            ? htmlMatch[1].trim()
-            : null;
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-    let css =
-        cssMatch
-            ? cssMatch[1].trim()
-            : null;
+.top-button,
+.primary-button {
+    height: 35px;
+    padding: 0 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: #555b66;
+    font-size: 11px;
+    font-weight: 600;
+}
 
-    let js =
-        jsMatch
-            ? jsMatch[1].trim()
-            : null;
+.top-button:hover {
+    background: #f7f7f8;
+}
 
+.primary-button {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 13px rgba(99, 91, 255, .2);
+}
 
-    /*
-       Remove possíveis ```html etc.
-    */
-
-    html =
-        cleanCode(html);
-
-    css =
-        cleanCode(css);
-
-    js =
-        cleanCode(js);
-
-
-    return {
-
-        message:
-            messageMatch
-                ? messageMatch[1].trim()
-                : "Site atualizado.",
-
-        html,
-
-        css,
-
-        js
-
-    };
-
+.primary-button:hover {
+    background: var(--primary-dark);
 }
 
 
-/* =========================================================
-   LIMPAR CÓDIGO
-   ========================================================= */
+/* =========================
+   WORKSPACE
+========================= */
 
-function cleanCode(code) {
-
-    if (!code)
-        return null;
-
-
-    return code
-        .replace(/^```[a-zA-Z0-9_-]*\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .trim();
-
+.workspace {
+    display: grid;
+    grid-template-columns: 390px minmax(0, 1fr);
+    min-height: 590px;
+    flex: 1;
 }
 
 
-/* =========================================================
-   ENVIAR MENSAGEM
-   ========================================================= */
-
-async function sendMessage() {
-
-    const text =
-        userInput.value.trim();
-
-
-    if (!text)
-        return;
-
-
-    if (state.isGenerating)
-        return;
-
-
-    addMessage(
-        "user",
-        text
-    );
-
-
-    userInput.value = "";
-
-    autoResizeTextarea();
-
-
-    state.messages.push({
-
-        role: "user",
-
-        content: text
-
-    });
-
-
-    setGenerating(true);
-
-
-    const loadingId =
-        addLoadingMessage();
-
-
-    try {
-
-        const response =
-            await askGroq(text);
-
-
-        removeMessage(
-            loadingId
-        );
-
-
-        const parsed =
-            parseForgeResponse(response);
-
-
-        /*
-           Guarda estado anterior
-           para possibilitar undo.
-        */
-
-        state.history.push({
-
-            html: state.files.html,
-
-            css: state.files.css,
-
-            js: state.files.js
-
-        });
-
-
-        /*
-           Só substituímos arquivos que
-           realmente vieram na resposta.
-        */
-
-        if (parsed.html)
-            state.files.html =
-                parsed.html;
-
-        if (parsed.css)
-            state.files.css =
-                parsed.css;
-
-        if (parsed.js)
-            state.files.js =
-                parsed.js;
-
-
-        state.messages.push({
-
-            role: "assistant",
-
-            content:
-                parsed.message
-
-        });
-
-
-        addMessage(
-            "ai",
-            parsed.message
-        );
-
-
-        saveProject(
-            false
-        );
-
-        loadEditor();
-
-        updatePreview();
-
-        showToast(
-            "Site atualizado!"
-        );
-
-
-    } catch (error) {
-
-        removeMessage(
-            loadingId
-        );
-
-
-        console.error(error);
-
-
-        const message =
-            error.message ||
-            "Erro desconhecido.";
-
-
-        addMessage(
-            "ai",
-            `Não consegui atualizar o projeto.\n\n${message}`
-        );
-
-
-    } finally {
-
-        setGenerating(false);
-
-    }
-
+/* CHAT */
+
+.chat-panel {
+    background: #fff;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.panel-header {
+    padding: 22px 22px 17px;
+    border-bottom: 1px solid #eef0f2;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.panel-header h1 {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    margin: 0;
+    font-size: 17px;
+    letter-spacing: -.4px;
+}
+
+.panel-header p {
+    margin: 5px 0 0;
+    color: #969ba5;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.ai-status {
+    white-space: nowrap;
+    font-size: 9px;
+    color: #6d737d;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding-top: 4px;
+}
+
+.ai-status span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #32c77b;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 22px;
+}
+
+.welcome-card {
+    padding-top: 28px;
+}
+
+.welcome-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: #f0efff;
+    color: var(--primary);
+    display: grid;
+    place-items: center;
+    font-size: 21px;
+    margin-bottom: 17px;
+}
+
+.welcome-card h2 {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 20px;
+    margin: 0 0 7px;
+    letter-spacing: -.6px;
+}
+
+.welcome-card > p {
+    color: #858a94;
+    font-size: 11px;
+    line-height: 1.6;
+    margin: 0 0 22px;
+}
+
+.suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.suggestion {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 10px;
+    padding: 11px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-align: left;
+    transition: .2s;
+}
+
+.suggestion:hover {
+    border-color: #c9c5ff;
+    background: #fafaff;
+    transform: translateY(-1px);
+}
+
+.suggestion > span {
+    width: 32px;
+    height: 32px;
+    background: #f5f5f7;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+}
+
+.suggestion strong {
+    display: block;
+    font-size: 11px;
+    color: #353942;
+}
+
+.suggestion small {
+    display: block;
+    color: #999ea8;
+    font-size: 9px;
+    margin-top: 3px;
 }
 
 
-/* =========================================================
-   MENSAGENS
-   ========================================================= */
+/* CHAT MESSAGES */
 
-function addMessage(
-    type,
-    text
-) {
+.message {
+    display: flex;
+    gap: 9px;
+    margin-bottom: 18px;
+}
 
-    const welcome =
-        messagesEl.querySelector(
-            ".welcome"
-        );
+.message.user {
+    justify-content: flex-end;
+}
 
-    if (welcome)
-        welcome.remove();
+.message-avatar {
+    width: 27px;
+    height: 27px;
+    flex: 0 0 27px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 800;
+}
 
+.message.ai .message-avatar {
+    background: #f0efff;
+    color: var(--primary);
+}
 
-    const wrapper =
-        document.createElement("div");
+.message.user .message-avatar {
+    background: #1d2027;
+    color: #fff;
+    order: 2;
+}
 
-    wrapper.className =
-        `message ${type}`;
+.message-bubble {
+    max-width: 285px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.55;
+}
 
+.message.ai .message-bubble {
+    background: #f5f6f8;
+    color: #565b64;
+}
 
-    const label =
-        document.createElement("div");
-
-    label.className =
-        "message-label";
-
-    label.textContent =
-        type === "user"
-            ? "Você"
-            : "ForgeAI";
-
-
-    const bubble =
-        document.createElement("div");
-
-    bubble.className =
-        "message-bubble";
-
-    bubble.textContent =
-        text;
-
-
-    wrapper.appendChild(label);
-
-    wrapper.appendChild(bubble);
-
-    messagesEl.appendChild(wrapper);
-
-
-    messagesEl.scrollTop =
-        messagesEl.scrollHeight;
-
+.message.user .message-bubble {
+    background: var(--primary);
+    color: white;
 }
 
 
-function addLoadingMessage() {
+/* COMPOSER */
 
-    const id =
-        "loading-" +
-        Date.now();
+.composer {
+    padding: 13px 17px 17px;
+    border-top: 1px solid #eef0f2;
+}
 
+.composer-box {
+    border: 1px solid #dfe2e7;
+    border-radius: 12px;
+    padding: 9px;
+    background: #fff;
+    transition: .2s;
+}
 
-    const wrapper =
-        document.createElement("div");
+.composer-box:focus-within {
+    border-color: #aaa5ff;
+    box-shadow: 0 0 0 3px rgba(99,91,255,.07);
+}
 
-    wrapper.className =
-        "message ai";
+.composer textarea {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    resize: none;
+    color: var(--text);
+    font-size: 11px;
+    min-height: 38px;
+    max-height: 120px;
+    padding: 5px 5px 4px;
+    line-height: 1.5;
+}
 
-    wrapper.id =
-        id;
+.composer textarea::placeholder {
+    color: #afb3bb;
+}
 
+.composer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
-    wrapper.innerHTML = `
-        <div class="message-label">
-            ForgeAI
-        </div>
+.composer-hints {
+    color: #b0b4bb;
+    font-size: 8px;
+    padding-left: 4px;
+}
 
-        <div class="message-bubble loading-dots">
-            Construindo
-        </div>
-    `;
+.composer-hints span {
+    margin-right: 4px;
+}
 
+.send-button {
+    border: 0;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--primary);
+    color: white;
+    padding: 0 9px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+    font-weight: 700;
+}
 
-    messagesEl.appendChild(
-        wrapper
-    );
+.send-button b {
+    font-size: 15px;
+}
 
+.send-button:hover {
+    background: var(--primary-dark);
+}
 
-    messagesEl.scrollTop =
-        messagesEl.scrollHeight;
-
-
-    return id;
-
+.send-button:disabled {
+    opacity: .5;
+    cursor: wait;
 }
 
 
-function removeMessage(id) {
-
-    const element =
-        document.getElementById(id);
-
-    if (element)
-        element.remove();
-
-}
-
-
-function clearChat() {
-
-    state.messages = [];
-
-    messagesEl.innerHTML = `
-        <div class="welcome">
-
-            <div class="welcome-icon">
-                ✦
-            </div>
-
-            <h1>O que vamos construir?</h1>
-
-            <p>
-                Descreva o site que você quer e a IA vai criar
-                o projeto para você.
-            </p>
-
-            <div class="suggestions">
-
-                <button class="suggestion">
-                    Crie uma landing page moderna para uma loja de tênis
-                </button>
-
-                <button class="suggestion">
-                    Crie um site para uma hamburgueria com cardápio
-                </button>
-
-                <button class="suggestion">
-                    Crie um portfólio profissional para um programador
-                </button>
-
-            </div>
-
-        </div>
-    `;
-
-
-    document
-        .querySelectorAll(".suggestion")
-        .forEach(button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    userInput.value =
-                        button.textContent.trim();
-
-                    autoResizeTextarea();
-
-                    userInput.focus();
-
-                }
-            );
-
-        });
-
-}
-
-
-/* =========================================================
-   EDITOR
-   ========================================================= */
-
-function loadEditor() {
-
-    codeEditor.value =
-        state.files[state.activeFile] || "";
-
-    updateLineNumbers();
-
-}
-
-
-function saveCurrentEditor() {
-
-    state.files[
-        state.activeFile
-    ] = codeEditor.value;
-
-}
-
-
-function updateLineNumbers() {
-
-    const lines =
-        codeEditor.value.split("\n").length;
-
-
-    let html = "";
-
-    for (
-        let i = 1;
-        i <= lines;
-        i++
-    ) {
-
-        html +=
-            `${i}<br>`;
-
-    }
-
-
-    lineNumbers.innerHTML =
-        html;
-
-}
-
-
-function formatCode() {
-
-    saveCurrentEditor();
-
-
-    let code =
-        state.files[state.activeFile];
-
-
-    if (!code)
-        return;
-
-
-    /*
-       Formatação simples.
-       Não tenta ser um formatter completo.
-    */
-
-    if (
-        state.activeFile === "html"
-    ) {
-
-        code =
-            code
-                .replace(/>\s*</g, ">\n<")
-                .replace(
-                    /\n\s*\n/g,
-                    "\n"
-                );
-
-    }
-
-
-    if (
-        state.activeFile === "css"
-    ) {
-
-        code =
-            code
-                .replace(/\{/g, "{\n")
-                .replace(/;/g, ";\n")
-                .replace(/\}/g, "\n}\n");
-
-    }
-
-
-    state.files[
-        state.activeFile
-    ] = code.trim();
-
-
-    loadEditor();
-
-    updatePreview();
-
-}
-
-
-/* =========================================================
+/* =========================
    PREVIEW
-   ========================================================= */
+========================= */
 
-let previewTimer;
+.preview-panel {
+    background: #f5f6f8;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
 
+.preview-toolbar {
+    height: 51px;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+}
 
-function updatePreviewDebounced() {
+.preview-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 10px;
+}
 
-    clearTimeout(
-        previewTimer
-    );
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: #36c985;
+    border-radius: 50%;
+}
 
-    previewTimer =
-        setTimeout(
-            updatePreview,
-            400
-        );
+.device-buttons {
+    margin: auto;
+    display: flex;
+    gap: 3px;
+    padding: 3px;
+    background: #f3f4f6;
+    border-radius: 7px;
+}
 
+.device-button {
+    width: 30px;
+    height: 25px;
+    border: 0;
+    background: transparent;
+    border-radius: 5px;
+    color: #8f949d;
+}
+
+.device-button.active {
+    background: white;
+    color: #383c44;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+
+.preview-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.preview-actions button {
+    border: 0;
+    background: transparent;
+    color: #888e98;
+    width: 27px;
+    height: 27px;
+    border-radius: 6px;
+}
+
+.preview-actions button:hover {
+    background: #f3f4f6;
+    color: #333;
+}
+
+.preview-area {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    padding: 25px;
+    min-height: 0;
+    overflow: auto;
+}
+
+.browser-frame {
+    width: 100%;
+    height: 100%;
+    max-width: 1200px;
+    background: white;
+    border-radius: 11px;
+    overflow: hidden;
+    box-shadow: 0 15px 45px rgba(30,35,45,.11);
+    transition: width .3s, height .3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.browser-frame.tablet {
+    width: 768px;
+    max-width: 768px;
+}
+
+.browser-frame.mobile {
+    width: 390px;
+    max-width: 390px;
+}
+
+.browser-bar {
+    height: 29px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e7e8eb;
+    display: grid;
+    grid-template-columns: 100px 1fr 100px;
+    align-items: center;
+    padding: 0 10px;
+    flex-shrink: 0;
+}
+
+.browser-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.browser-dots i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d5d8dd;
+}
+
+.browser-address {
+    height: 17px;
+    border-radius: 4px;
+    background: #f0f1f3;
+    color: #a3a7ae;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+}
+
+.iframe-wrapper {
+    flex: 1;
+    min-height: 0;
+    background: white;
+}
+
+#preview {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
 }
 
 
-function updatePreview() {
+/* =========================
+   CODE
+========================= */
 
-    saveCurrentEditor();
+.code-section {
+    height: 255px;
+    background: white;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+}
+
+.code-header {
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+}
+
+.code-header strong {
+    font-size: 11px;
+}
+
+.code-header span {
+    color: #a1a5ae;
+    font-size: 9px;
+    margin-left: 8px;
+}
+
+.code-actions button {
+    height: 27px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 6px;
+    padding: 0 9px;
+    font-size: 9px;
+    color: #777c85;
+}
+
+.code-tabs {
+    height: 34px;
+    border-bottom: 1px solid #e8e9ec;
+    display: flex;
+    padding: 0 15px;
+    gap: 4px;
+}
+
+.code-tab {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    padding: 0 9px;
+    font-size: 9px;
+    color: #999da5;
+}
+
+.code-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+#codeEditor {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    border: 0;
+    outline: 0;
+    padding: 13px 17px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 10px;
+    line-height: 1.6;
+    color: #343840;
+    background: #fbfbfc;
+}
 
 
-    if (
-        !state.files.html &&
-        !state.files.css &&
-        !state.files.js
-    ) {
+/* =========================
+   MODAL
+========================= */
 
-        previewFrame.style.display =
-            "none";
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+}
 
-        emptyPreview.style.display =
-            "flex";
+.modal.hidden {
+    display: none;
+}
 
-        return;
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20,25,35,.25);
+    backdrop-filter: blur(4px);
+}
 
+.modal-card {
+    width: 410px;
+    background: white;
+    border-radius: 16px;
+    padding: 27px;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 25px 80px rgba(20,25,40,.18);
+}
+
+.modal-close {
+    position: absolute;
+    right: 15px;
+    top: 13px;
+    border: 0;
+    background: transparent;
+    font-size: 22px;
+    color: #a1a5ac;
+}
+
+.modal-icon {
+    width: 39px;
+    height: 39px;
+    border-radius: 10px;
+    background: #f0efff;
+    color: var(--primary);
+    display: grid;
+    place-items: center;
+    margin-bottom: 14px;
+}
+
+.modal-card h2 {
+    font-family: "Plus Jakarta Sans", sans-serif;
+    margin: 0;
+    font-size: 19px;
+}
+
+.modal-card > p {
+    font-size: 10px;
+    line-height: 1.6;
+    color: #898e97;
+    margin: 7px 0 20px;
+}
+
+.modal-card label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #555a63;
+    margin-bottom: 14px;
+}
+
+.modal-card input {
+    width: 100%;
+    height: 38px;
+    margin-top: 6px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: 0;
+    padding: 0 10px;
+    font-size: 11px;
+}
+
+.modal-card input:focus {
+    border-color: #aaa5ff;
+}
+
+.full {
+    width: 100%;
+    margin-top: 3px;
+}
+
+.modal-card small {
+    display: block;
+    color: #a2a6ae;
+    font-size: 8px;
+    line-height: 1.5;
+    margin-top: 14px;
+}
+
+
+/* =========================
+   TOAST
+========================= */
+
+.toast {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    background: #1d2027;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.16);
+    transform: translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: .25s;
+    z-index: 200;
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1050px) {
+
+    .sidebar {
+        width: 210px;
     }
 
-
-    let html =
-        state.files.html ||
-        "<!DOCTYPE html><html><body></body></html>";
-
-
-    /*
-       Injeta CSS se o HTML não
-       estiver usando style.css.
-    */
-
-    const styleTag = `
-<style>
-${state.files.css || ""}
-</style>
-`;
-
-
-    const scriptTag = `
-<script>
-${state.files.js || ""}
-<\/script>
-`;
-
-
-    if (
-        /<\/head>/i.test(html)
-    ) {
-
-        html =
-            html.replace(
-                /<\/head>/i,
-                `${styleTag}</head>`
-            );
-
-    } else {
-
-        html =
-            styleTag +
-            html;
-
-    }
-
-
-    if (
-        /<\/body>/i.test(html)
-    ) {
-
-        html =
-            html.replace(
-                /<\/body>/i,
-                `${scriptTag}</body>`
-            );
-
-    } else {
-
-        html += scriptTag;
-
-    }
-
-
-    previewFrame.style.display =
-        "block";
-
-    emptyPreview.style.display =
-        "none";
-
-
-    previewFrame.srcdoc =
-        html;
-
-}
-
-
-/* =========================================================
-   DISPOSITIVOS
-   ========================================================= */
-
-function changeDevice(device) {
-
-    const browser =
-        document.querySelector(
-            ".browser"
-        );
-
-
-    if (device === "desktop") {
-
-        browser.style.width =
-            "100%";
-
-        browser.style.maxWidth =
-            "1100px";
-
-    }
-
-
-    if (device === "tablet") {
-
-        browser.style.width =
-            "768px";
-
-        browser.style.maxWidth =
-            "90%";
-
-    }
-
-
-    if (device === "mobile") {
-
-        browser.style.width =
-            "390px";
-
-        browser.style.maxWidth =
-            "90%";
-
-    }
-
-}
-
-
-function openPreview() {
-
-    if (!state.files.html) {
-
-        showToast(
-            "Ainda não existe um site para abrir."
-        );
-
-        return;
-
-    }
-
-
-    saveCurrentEditor();
-
-
-    let html =
-        state.files.html;
-
-
-    const style =
-        `<style>${state.files.css}</style>`;
-
-
-    const script =
-        `<script>${state.files.js}<\/script>`;
-
-
-    html =
-        html.replace(
-            /<\/head>/i,
-            `${style}</head>`
-        );
-
-
-    html =
-        html.replace(
-            /<\/body>/i,
-            `${script}</body>`
-        );
-
-
-    const blob =
-        new Blob(
-            [html],
-            {
-                type: "text/html"
-            }
-        );
-
-
-    const url =
-        URL.createObjectURL(blob);
-
-
-    window.open(
-        url,
-        "_blank"
-    );
-
-
-    setTimeout(
-        () => URL.revokeObjectURL(url),
-        10000
-    );
-
-}
-
-
-/* =========================================================
-   PROJETO
-   ========================================================= */
-
-function saveProject(
-    showMessage = true
-) {
-
-    saveCurrentEditor();
-
-
-    localStorage.setItem(
-        "forgeai_project_name",
-        state.projectName
-    );
-
-
-    localStorage.setItem(
-        "forgeai_html",
-        state.files.html
-    );
-
-
-    localStorage.setItem(
-        "forgeai_css",
-        state.files.css
-    );
-
-
-    localStorage.setItem(
-        "forgeai_js",
-        state.files.js
-    );
-
-
-    saveStatus.textContent =
-        "Salvo agora";
-
-
-    if (showMessage) {
-
-        showToast(
-            "Projeto salvo."
-        );
-
-    }
-
-}
-
-
-function newProject() {
-
-    const confirmed =
-        confirm(
-            "Criar um novo projeto? O projeto atual continuará salvo no navegador."
-        );
-
-
-    if (!confirmed)
-        return;
-
-
-    state.files = {
-
-        html: "",
-
-        css: "",
-
-        js: ""
-
-    };
-
-
-    state.messages = [];
-
-    state.history = [];
-
-    state.projectName =
-        "Novo projeto";
-
-
-    updateProjectName();
-
-    clearChat();
-
-    loadEditor();
-
-    updatePreview();
-
-    showToast(
-        "Novo projeto criado."
-    );
-
-}
-
-
-function renameProject() {
-
-    const name =
-        prompt(
-            "Nome do projeto:",
-            state.projectName
-        );
-
-
-    if (!name)
-        return;
-
-
-    state.projectName =
-        name.trim();
-
-
-    updateProjectName();
-
-    saveProject(false);
-
-}
-
-
-function updateProjectName() {
-
-    projectName.textContent =
-        state.projectName;
-
-    topProjectName.textContent =
-        state.projectName;
-
-}
-
-
-/* =========================================================
-   DOWNLOAD
-   ========================================================= */
-
-function downloadProject() {
-
-    saveCurrentEditor();
-
-
-    downloadFile(
-        "index.html",
-        state.files.html
-    );
-
-
-    setTimeout(
-        () => {
-
-            downloadFile(
-                "style.css",
-                state.files.css
-            );
-
-        },
-        200
-    );
-
-
-    setTimeout(
-        () => {
-
-            downloadFile(
-                "script.js",
-                state.files.js
-            );
-
-        },
-        400
-    );
-
-
-    showToast(
-        "Arquivos baixados."
-    );
-
-}
-
-
-function downloadFile(
-    filename,
-    content
-) {
-
-    const blob =
-        new Blob(
-            [content || ""],
-            {
-                type: "text/plain;charset=utf-8"
-            }
-        );
-
-
-    const url =
-        URL.createObjectURL(blob);
-
-
-    const link =
-        document.createElement("a");
-
-
-    link.href =
-        url;
-
-    link.download =
-        filename;
-
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    link.remove();
-
-
-    setTimeout(
-        () => URL.revokeObjectURL(url),
-        1000
-    );
-
-}
-
-
-/* =========================================================
-   COPIAR
-   ========================================================= */
-
-async function copyCode() {
-
-    saveCurrentEditor();
-
-
-    try {
-
-        await navigator.clipboard.writeText(
-            state.files[state.activeFile] || ""
-        );
-
-
-        showToast(
-            "Código copiado."
-        );
-
-
-    } catch {
-
-        codeEditor.select();
-
-        document.execCommand(
-            "copy"
-        );
-
-        showToast(
-            "Código copiado."
-        );
-
+    .workspace {
+        grid-template-columns: 330px minmax(0, 1fr);
     }
 
 }
 
+@media (max-width: 850px) {
 
-/* =========================================================
-   API CONFIG
-   ========================================================= */
-
-function openApiModal() {
-
-    $("apiModal")
-        .classList.add("show");
-
-
-    $("apiKeyInput").value =
-        apiKey;
-
-
-    $("modelInput").value =
-        selectedModel;
-
-}
-
-
-function closeApiModal() {
-
-    $("apiModal")
-        .classList.remove("show");
-
-}
-
-
-function saveApiConfig() {
-
-    const key =
-        $("apiKeyInput")
-            .value
-            .trim();
-
-
-    const model =
-        $("modelInput")
-            .value;
-
-
-    if (!key) {
-
-        showToast(
-            "Digite uma API Key."
-        );
-
-        return;
-
+    .sidebar {
+        display: none;
     }
 
+    .workspace {
+        grid-template-columns: 1fr;
+    }
 
-    apiKey =
-        key;
+    .chat-panel {
+        min-height: 500px;
+        border-right: 0;
+    }
 
-    selectedModel =
-        model;
-
-
-    localStorage.setItem(
-        "forgeai_groq_key",
-        apiKey
-    );
-
-
-    localStorage.setItem(
-        "forgeai_model",
-        selectedModel
-    );
-
-
-    updateApiStatus();
-
-    closeApiModal();
-
-    showToast(
-        "Groq conectada."
-    );
-
-}
-
-
-function updateApiStatus() {
-
-    if (apiKey) {
-
-        apiStatus.textContent =
-            selectedModel;
-
-        statusDot.style.background =
-            "#22c55e";
-
-    } else {
-
-        apiStatus.textContent =
-            "Clique para configurar";
-
-        statusDot.style.background =
-            "#f59e0b";
-
+    .preview-panel {
+        min-height: 600px;
     }
 
 }
 
+@media (max-width: 600px) {
 
-/* =========================================================
-   UTILIDADES
-   ========================================================= */
+    .topbar {
+        padding: 0 13px;
+    }
 
-function setGenerating(value) {
+    .workspace {
+        display: block;
+    }
 
-    state.isGenerating =
-        value;
+    .preview-area {
+        padding: 10px;
+    }
 
-    sendBtn.disabled =
-        value;
+    .browser-frame {
+        min-height: 500px;
+    }
 
-    userInput.disabled =
-        value;
-
-
-    if (value) {
-
-        sendBtn.textContent =
-            "…";
-
-    } else {
-
-        sendBtn.textContent =
-            "↑";
-
+    .code-section {
+        display: none;
     }
 
 }
-
-
-function autoResizeTextarea() {
-
-    userInput.style.height =
-        "auto";
-
-
-    userInput.style.height =
-        Math.min(
-            userInput.scrollHeight,
-            130
-        ) + "px";
-
-}
-
-
-let toastTimer;
-
-function showToast(message) {
-
-    const toast =
-        $("toast");
-
-
-    toast.textContent =
-        message;
-
-
-    toast.classList.add(
-        "show"
-    );
-
-
-    clearTimeout(
-        toastTimer
-    );
-
-
-    toastTimer =
-        setTimeout(
-            () => {
-
-                toast.classList.remove(
-                    "show"
-                );
-
-            },
-            2800
-        );
-
-}
-
-
-/* =========================================================
-   ATALHOS
-   ========================================================= */
-
-document.addEventListener(
-    "keydown",
-    event => {
-
-        /*
-           Ctrl + S
-        */
-
-        if (
-            event.ctrlKey &&
-            event.key.toLowerCase() === "s"
-        ) {
-
-            event.preventDefault();
-
-            saveProject();
-
-        }
-
-
-        /*
-           Ctrl + Enter
-        */
-
-        if (
-            event.ctrlKey &&
-            event.key === "Enter"
-        ) {
-
-            event.preventDefault();
-
-            sendMessage();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   CLIQUE NO STATUS DA API
-   ========================================================= */
-
-document
-    .querySelector(".api-status")
-    .addEventListener(
-        "click",
-        openApiModal
-    );
-
-
-/* =========================================================
-   FIM
-   ========================================================= */
