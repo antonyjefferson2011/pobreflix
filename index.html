@@ -1,380 +1,1498 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forge — AI Website Builder</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Apuração Eleitoral 2026</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: Inter, Arial, Helvetica, sans-serif;
+        background:
+            radial-gradient(circle at top left, #172554 0%, transparent 35%),
+            radial-gradient(circle at top right, #312e81 0%, transparent 30%),
+            #080b14;
+        color: #f8fafc;
+        min-height: 100vh;
+    }
+
+    header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        backdrop-filter: blur(18px);
+        background: rgba(8, 11, 20, .82);
+        border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .header-inner {
+        max-width: 1250px;
+        margin: auto;
+        padding: 18px 22px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+    }
+
+    .brand-icon {
+        width: 43px;
+        height: 43px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+        font-size: 21px;
+        box-shadow: 0 8px 30px rgba(37,99,235,.3);
+    }
+
+    .brand h1 {
+        font-size: 19px;
+        font-weight: 800;
+    }
+
+    .brand span {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .live {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(34,197,94,.1);
+        border: 1px solid rgba(34,197,94,.25);
+        color: #86efac;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 12px #22c55e;
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0%,100% { opacity: 1; }
+        50% { opacity: .35; }
+    }
+
+    main {
+        max-width: 1250px;
+        margin: auto;
+        padding: 35px 22px 60px;
+    }
+
+    .hero {
+        margin-bottom: 25px;
+    }
+
+    .hero h2 {
+        font-size: clamp(28px, 5vw, 46px);
+        letter-spacing: -1.5px;
+        margin-bottom: 8px;
+    }
+
+    .hero p {
+        color: #94a3b8;
+        font-size: 14px;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 25px;
+    }
+
+    .stat {
+        background: rgba(15,23,42,.72);
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 18px;
+        padding: 20px;
+        box-shadow: 0 15px 45px rgba(0,0,0,.18);
+    }
+
+    .stat-label {
+        color: #94a3b8;
+        font-size: 12px;
+        margin-bottom: 9px;
+    }
+
+    .stat-value {
+        font-size: 25px;
+        font-weight: 800;
+    }
+
+    .content {
+        display: grid;
+        grid-template-columns: 1.65fr 1fr;
+        gap: 18px;
+    }
+
+    .panel {
+        background: rgba(15,23,42,.78);
+        border: 1px solid rgba(255,255,255,.07);
+        border-radius: 22px;
+        padding: 22px;
+        box-shadow: 0 18px 60px rgba(0,0,0,.2);
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 22px;
+    }
+
+    .panel-title h3 {
+        font-size: 18px;
+    }
+
+    .panel-title span {
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .candidate {
+        position: relative;
+        padding: 17px 0;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    .candidate:last-child {
+        border-bottom: none;
+    }
+
+    .candidate-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 11px;
+    }
+
+    .candidate-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .position {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: rgba(255,255,255,.06);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 800;
+        color: #cbd5e1;
+        flex-shrink: 0;
+    }
+
+    .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        color: white;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, #334155, #64748b);
+    }
+
+    .candidate-name {
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .candidate-party {
+        color: #64748b;
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    .percentage {
+        font-size: 22px;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .bar {
+        height: 9px;
+        background: rgba(255,255,255,.06);
+        border-radius: 99px;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        width: 0%;
+        border-radius: inherit;
+        transition: width .7s ease;
+        background: linear-gradient(90deg, #2563eb, #60a5fa);
+    }
+
+    .candidate-meta {
+        display: flex;
+        justify-content: space-between;
+        color: #64748b;
+        font-size: 11px;
+        margin-top: 8px;
+    }
+
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        padding: 14px 0;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+
+    .ranking-item:last-child {
+        border-bottom: none;
+    }
+
+    .rank-number {
+        width: 29px;
+        height: 29px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: rgba(255,255,255,.06);
+        font-size: 12px;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+
+    .rank-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .rank-name {
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .rank-votes {
+        color: #64748b;
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    .rank-percent {
+        font-size: 14px;
+        font-weight: 900;
+    }
+
+    .update-box {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 13px 15px;
+        background: rgba(255,255,255,.035);
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: 13px;
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .status {
+        color: #86efac;
+    }
+
+    .error {
+        color: #fca5a5;
+    }
+
+    footer {
+        max-width: 1250px;
+        margin: auto;
+        padding: 0 22px 30px;
+        color: #475569;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    @media (max-width: 900px) {
+        .stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .content {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 550px) {
+        .header-inner {
+            padding: 14px;
+        }
+
+        main {
+            padding: 25px 14px 45px;
+        }
+
+        .stats {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .stat {
+            padding: 15px;
+        }
+
+        .stat-value {
+            font-size: 19px;
+        }
+
+        .percentage {
+            font-size: 18px;
+        }
+
+        .candidate-info {
+            gap: 8px;
+        }
+    }
+</style>
 </head>
 
 <body>
 
-<div class="app">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+<header>
+    <div class="header-inner">
 
         <div class="brand">
-            <div class="brand-mark">F</div>
+            <div class="brand-icon">🗳️</div>
+
             <div>
-                <strong>Forge</strong>
-                <span>AI Website Builder</span>
+                <h1>Apuração Eleitoral</h1>
+                <span>Eleições Gerais 2026</span>
             </div>
         </div>
 
-        <button class="new-project" id="newProjectBtn">
-            <span>＋</span>
-            Novo site
-        </button>
-
-        <div class="sidebar-section">
-            <div class="sidebar-label">PROJETO</div>
-
-            <div class="project-card">
-                <div class="project-icon">✦</div>
-                <div class="project-info">
-                    <strong id="projectName">Meu site</strong>
-                    <span id="projectStatus">Pronto para criar</span>
-                </div>
-            </div>
+        <div class="live">
+            <div class="live-dot"></div>
+            TEMPO REAL
         </div>
-
-        <div class="sidebar-section">
-            <div class="sidebar-label">FERRAMENTAS</div>
-
-            <button class="side-button" id="undoBtn">
-                <span>↶</span>
-                Desfazer
-                <kbd>Ctrl Z</kbd>
-            </button>
-
-            <button class="side-button" id="redoBtn">
-                <span>↷</span>
-                Refazer
-                <kbd>Ctrl Y</kbd>
-            </button>
-
-            <button class="side-button" id="improveBtn">
-                <span>✦</span>
-                Melhorar design
-            </button>
-        </div>
-
-        <div class="sidebar-bottom">
-            <div class="connection">
-                <span class="connection-dot"></span>
-                <span id="connectionText">API não configurada</span>
-            </div>
-
-            <button class="settings-button" id="settingsBtn">
-                ⚙ Configurações
-            </button>
-        </div>
-
-    </aside>
-
-
-    <!-- MAIN -->
-    <main class="main">
-
-        <!-- TOPBAR -->
-        <header class="topbar">
-
-            <div class="breadcrumbs">
-                <span>Projetos</span>
-                <b>/</b>
-                <strong id="topProjectName">Meu site</strong>
-            </div>
-
-            <div class="top-actions">
-                <button class="top-button" id="saveBtn">
-                    Salvar
-                </button>
-
-                <button class="primary-button" id="downloadBtn">
-                    ↓ Exportar
-                </button>
-            </div>
-
-        </header>
-
-
-        <!-- WORKSPACE -->
-        <section class="workspace">
-
-            <!-- CHAT -->
-            <section class="chat-panel">
-
-                <div class="panel-header">
-                    <div>
-                        <h1>Crie seu site</h1>
-                        <p>Descreva o que você quer. A Forge cuida do resto.</p>
-                    </div>
-
-                    <div class="ai-status">
-                        <span></span>
-                        IA pronta
-                    </div>
-                </div>
-
-
-                <div class="chat-messages" id="chatMessages">
-
-                    <div class="welcome-card">
-
-                        <div class="welcome-icon">✦</div>
-
-                        <h2>Que site vamos criar?</h2>
-
-                        <p>
-                            Fale normalmente. Você pode começar do zero,
-                            pedir alterações ou melhorar o design.
-                        </p>
-
-                        <div class="suggestions">
-
-                            <button class="suggestion"
-                                    data-prompt="Crie um site moderno e premium para uma cafeteria chamada Aurora Coffee, com hero, produtos, sobre nós, depoimentos e contato. Use imagens bonitas de café.">
-                                <span>☕</span>
-                                <div>
-                                    <strong>Cafeteria</strong>
-                                    <small>Site moderno para uma cafeteria</small>
-                                </div>
-                            </button>
-
-                            <button class="suggestion"
-                                    data-prompt="Crie uma landing page premium para uma startup de tecnologia chamada NovaFlow. Quero um visual moderno, elegante, com hero, benefícios, números, depoimentos, preços e chamada para ação.">
-                                <span>◈</span>
-                                <div>
-                                    <strong>Startup</strong>
-                                    <small>Landing page profissional</small>
-                                </div>
-                            </button>
-
-                            <button class="suggestion"
-                                    data-prompt="Crie um site elegante para uma loja de tênis chamada Urban Steps, com hero, produtos, benefícios, depoimentos e chamada para compra. Use fotos reais de tênis.">
-                                <span>◉</span>
-                                <div>
-                                    <strong>Loja</strong>
-                                    <small>E-commerce visual</small>
-                                </div>
-                            </button>
-
-                            <button class="suggestion"
-                                    data-prompt="Crie um portfólio minimalista e elegante para um designer chamado Lucas Martins, com apresentação, trabalhos, serviços, depoimentos e contato.">
-                                <span>✎</span>
-                                <div>
-                                    <strong>Portfólio</strong>
-                                    <small>Design minimalista</small>
-                                </div>
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="composer">
-
-                    <div class="composer-box">
-
-                        <textarea
-                            id="promptInput"
-                            placeholder="Descreva o site que você quer..."
-                            rows="1"
-                        ></textarea>
-
-                        <div class="composer-bottom">
-
-                            <div class="composer-hints">
-                                <span>Enter para enviar</span>
-                                <span>•</span>
-                                <span>Shift + Enter para nova linha</span>
-                            </div>
-
-                            <button id="sendBtn" class="send-button">
-                                <span>Gerar</span>
-                                <b>↑</b>
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- PREVIEW -->
-            <section class="preview-panel">
-
-                <div class="preview-toolbar">
-
-                    <div class="preview-title">
-                        <span class="live-dot"></span>
-                        <strong>Visualização</strong>
-                    </div>
-
-                    <div class="device-buttons">
-
-                        <button class="device-button active" data-device="desktop">
-                            ▭
-                        </button>
-
-                        <button class="device-button" data-device="tablet">
-                            ▯
-                        </button>
-
-                        <button class="device-button" data-device="mobile">
-                            ▯
-                        </button>
-
-                    </div>
-
-                    <div class="preview-actions">
-                        <button id="refreshPreview" title="Atualizar">↻</button>
-                        <button id="openPreview" title="Abrir em nova aba">↗</button>
-                    </div>
-
-                </div>
-
-
-                <div class="preview-area">
-
-                    <div class="browser-frame" id="browserFrame">
-
-                        <div class="browser-bar">
-
-                            <div class="browser-dots">
-                                <i></i>
-                                <i></i>
-                                <i></i>
-                            </div>
-
-                            <div class="browser-address">
-                                forge-preview.local
-                            </div>
-
-                            <div></div>
-
-                        </div>
-
-                        <div class="iframe-wrapper">
-                            <iframe
-                                id="preview"
-                                title="Preview do site"
-                            ></iframe>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-        </section>
-
-
-        <!-- CODE -->
-        <section class="code-section">
-
-            <div class="code-header">
-
-                <div>
-                    <strong>Código gerado</strong>
-                    <span>Você pode editar manualmente.</span>
-                </div>
-
-                <div class="code-actions">
-                    <button id="copyCodeBtn">Copiar</button>
-                </div>
-
-            </div>
-
-            <div class="code-tabs">
-
-                <button class="code-tab active" data-file="html">
-                    index.html
-                </button>
-
-                <button class="code-tab" data-file="css">
-                    style.css
-                </button>
-
-                <button class="code-tab" data-file="js">
-                    script.js
-                </button>
-
-            </div>
-
-            <textarea id="codeEditor" spellcheck="false"></textarea>
-
-        </section>
-
-    </main>
-
-</div>
-
-
-<!-- API MODAL -->
-<div class="modal hidden" id="settingsModal">
-
-    <div class="modal-backdrop"></div>
-
-    <div class="modal-card">
-
-        <button class="modal-close" id="closeSettings">×</button>
-
-        <div class="modal-icon">⚙</div>
-
-        <h2>Configurações</h2>
-
-        <p>
-            A chave fica salva somente neste navegador.
-            Para testes locais isso é suficiente.
-        </p>
-
-        <label>
-            Groq API Key
-            <input
-                type="password"
-                id="apiKeyInput"
-                placeholder="gsk_..."
-            >
-        </label>
-
-        <label>
-            Modelo
-            <input
-                type="text"
-                id="modelInput"
-                value="llama-3.3-70b-versatile"
-            >
-        </label>
-
-        <button class="primary-button full" id="saveSettings">
-            Salvar configurações
-        </button>
-
-        <small>
-            Não coloque uma API key real em um site público.
-            Para produção, use um backend.
-        </small>
 
     </div>
+</header>
 
-</div>
+
+<main>
+
+    <section class="hero">
+
+        <h2>Presidente da República</h2>
+
+        <p>
+            Acompanhamento automático da totalização dos votos
+        </p>
+
+    </section>
 
 
-<div class="toast" id="toast"></div>
+    <section class="stats">
 
-<script src="script.js"></script>
+        <div class="stat">
+            <div class="stat-label">
+                SEÇÕES APURADAS
+            </div>
+
+            <div class="stat-value" id="sections">
+                — 
+            </div>
+        </div>
+
+
+        <div class="stat">
+            <div class="stat-label">
+                TOTAL DE SEÇÕES
+            </div>
+
+            <div class="stat-value" id="totalSections">
+                —
+            </div>
+        </div>
+
+
+        <div class="stat">
+            <div class="stat-label">
+                VOTOS COMPUTADOS
+            </div>
+
+            <div class="stat-value" id="totalVotes">
+                —
+            </div>
+        </div>
+
+
+        <div class="stat">
+            <div class="stat-label">
+                TOTALIZAÇÃO
+            </div>
+
+            <div class="stat-value" id="percentageTotal">
+                —
+            </div>
+        </div>
+
+    </section>
+
+
+    <section class="content">
+
+        <!-- RANKING PRINCIPAL -->
+
+        <div class="panel">
+
+            <div class="panel-title">
+
+                <h3>Resultado</h3>
+
+                <span id="lastGeneration">
+                    Aguardando dados...
+                </span>
+
+            </div>
+
+            <div id="candidates">
+
+                <div style="color:#64748b;font-size:13px;">
+                    Carregando dados oficiais...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- RANKING -->
+
+        <div class="panel">
+
+            <div class="panel-title">
+
+                <h3>Ranking</h3>
+
+                <span>por votos</span>
+
+            </div>
+
+            <div id="ranking">
+
+                <div style="color:#64748b;font-size:13px;">
+                    Carregando...
+                </div>
+
+            </div>
+
+            <div class="update-box">
+
+                <span>
+                    Próxima atualização
+                </span>
+
+                <strong id="countdown">
+                    30s
+                </strong>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    Dados eleitorais: Tribunal Superior Eleitoral (TSE).
+    Este painel é uma interface independente para visualização dos dados públicos.
+
+</footer>
+
+
+<script>
+
+/*
+===========================================================
+ CONFIGURAÇÃO
+===========================================================
+*/
+
+/*
+ Cargo:
+ 0001 = Presidente
+
+ Eleição:
+ 6257 = Eleição Geral Federal 2026
+
+ Arquivo:
+ resultado unificado do Brasil
+*/
+
+const TSE_URL =
+    "https://resultados.tse.jus.br/oficial/ele2026/6257/dados/br/br-c0001-e06257-u.json";
+
+
+/*
+ Atualização automática.
+
+ 30 segundos é um intervalo conservador.
+*/
+
+const UPDATE_INTERVAL = 30000;
+
+
+/*
+===========================================================
+ ESTADO
+===========================================================
+*/
+
+let lastGeneration = null;
+
+let countdown = 30;
+
+
+/*
+===========================================================
+ ELEMENTOS
+===========================================================
+*/
+
+const candidatesElement =
+    document.getElementById("candidates");
+
+const rankingElement =
+    document.getElementById("ranking");
+
+const sectionsElement =
+    document.getElementById("sections");
+
+const totalSectionsElement =
+    document.getElementById("totalSections");
+
+const totalVotesElement =
+    document.getElementById("totalVotes");
+
+const percentageTotalElement =
+    document.getElementById("percentageTotal");
+
+const lastGenerationElement =
+    document.getElementById("lastGeneration");
+
+const countdownElement =
+    document.getElementById("countdown");
+
+
+/*
+===========================================================
+ FORMATAÇÃO
+===========================================================
+*/
+
+function formatNumber(number) {
+
+    return new Intl.NumberFormat("pt-BR")
+        .format(Number(number) || 0);
+
+}
+
+
+function formatPercentage(number) {
+
+    return Number(number || 0)
+        .toLocaleString("pt-BR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + "%";
+
+}
+
+
+/*
+===========================================================
+ CORES DOS CANDIDATOS
+===========================================================
+*/
+
+function candidateColor(index) {
+
+    const colors = [
+        "#2563eb",
+        "#ef4444",
+        "#16a34a",
+        "#f59e0b",
+        "#9333ea",
+        "#06b6d4",
+        "#ec4899",
+        "#64748b"
+    ];
+
+    return colors[index % colors.length];
+
+}
+
+
+/*
+===========================================================
+ PEGAR VALOR DE FORMA FLEXÍVEL
+===========================================================
+*/
+
+function getNumber(obj, keys) {
+
+    for (const key of keys) {
+
+        if (
+            obj &&
+            obj[key] !== undefined &&
+            obj[key] !== null
+        ) {
+
+            const value = Number(obj[key]);
+
+            if (!Number.isNaN(value)) {
+                return value;
+            }
+
+        }
+
+    }
+
+    return 0;
+
+}
+
+
+/*
+===========================================================
+ NORMALIZAÇÃO DOS CANDIDATOS
+===========================================================
+*/
+
+function normalizeCandidates(data) {
+
+    /*
+     O formato do TSE pode possuir estruturas internas
+     diferentes conforme o tipo de arquivo.
+
+     Tentamos localizar o array de candidatos.
+    */
+
+    let possibleArrays = [];
+
+    if (Array.isArray(data)) {
+        possibleArrays.push(data);
+    }
+
+    const possibleKeys = [
+        "cand",
+        "candidatos",
+        "candidate",
+        "candidates",
+        "abrangencia",
+        "abr"
+    ];
+
+    for (const key of possibleKeys) {
+
+        if (Array.isArray(data?.[key])) {
+            possibleArrays.push(data[key]);
+        }
+
+    }
+
+    /*
+     Procura recursivamente arrays contendo objetos.
+    */
+
+    function recursiveFind(obj, depth = 0) {
+
+        if (!obj || depth > 5) {
+            return [];
+        }
+
+        if (Array.isArray(obj)) {
+
+            if (
+                obj.length &&
+                typeof obj[0] === "object"
+            ) {
+                return obj;
+            }
+
+            return [];
+        }
+
+        if (typeof obj !== "object") {
+            return [];
+        }
+
+        for (const value of Object.values(obj)) {
+
+            const result =
+                recursiveFind(value, depth + 1);
+
+            if (result.length) {
+                return result;
+            }
+
+        }
+
+        return [];
+    }
+
+    const recursive =
+        recursiveFind(data);
+
+    possibleArrays.push(recursive);
+
+
+    let candidates = [];
+
+
+    for (const array of possibleArrays) {
+
+        for (const item of array) {
+
+            if (!item || typeof item !== "object") {
+                continue;
+            }
+
+            const name =
+                item.nm ||
+                item.nome ||
+                item.name ||
+                item.nm_cand ||
+                item.candidato ||
+                item.candidate;
+
+            if (!name) {
+                continue;
+            }
+
+
+            const votes =
+                getNumber(item, [
+                    "vap",
+                    "votos",
+                    "votes",
+                    "vv",
+                    "vot",
+                    "qt_votos"
+                ]);
+
+
+            const percentage =
+                getNumber(item, [
+                    "pvap",
+                    "percentual",
+                    "percentage",
+                    "percent",
+                    "pct"
+                ]);
+
+
+            candidates.push({
+
+                name: String(name),
+
+                votes: votes,
+
+                percentage: percentage,
+
+                party:
+                    item.sg_part ||
+                    item.partido ||
+                    item.party ||
+                    ""
+
+            });
+
+        }
+
+    }
+
+
+    /*
+     Remove duplicados.
+    */
+
+    const unique = [];
+
+    const seen = new Set();
+
+    for (const candidate of candidates) {
+
+        const key =
+            candidate.name + "-" + candidate.votes;
+
+        if (!seen.has(key)) {
+
+            seen.add(key);
+
+            unique.push(candidate);
+
+        }
+
+    }
+
+
+    /*
+     Ordena pelo número de votos.
+    */
+
+    unique.sort(
+        (a, b) => b.votes - a.votes
+    );
+
+
+    return unique;
+
+}
+
+
+/*
+===========================================================
+ INFORMAÇÕES GERAIS
+===========================================================
+*/
+
+function findGeneralData(data) {
+
+    let result = {
+
+        sections: 0,
+
+        totalSections: 0,
+
+        percentage: 0,
+
+        totalVotes: 0,
+
+        generation: null
+
+    };
+
+
+    function walk(obj, depth = 0) {
+
+        if (
+            !obj ||
+            typeof obj !== "object" ||
+            depth > 8
+        ) {
+            return;
+        }
+
+
+        if (Array.isArray(obj)) {
+
+            for (const item of obj) {
+                walk(item, depth + 1);
+            }
+
+            return;
+        }
+
+
+        for (const [key, value] of Object.entries(obj)) {
+
+            const lower =
+                key.toLowerCase();
+
+
+            if (
+                typeof value === "number" ||
+                typeof value === "string"
+            ) {
+
+                const numeric =
+                    Number(value);
+
+                if (Number.isNaN(numeric)) {
+                    continue;
+                }
+
+
+                if (
+                    result.sections === 0 &&
+                    (
+                        lower.includes("apurad") ||
+                        lower === "sap"
+                    )
+                ) {
+
+                    result.sections =
+                        numeric;
+
+                }
+
+
+                if (
+                    result.totalSections === 0 &&
+                    (
+                        lower.includes("total_sec") ||
+                        lower.includes("totaliz") ||
+                        lower === "s"
+                    )
+                ) {
+
+                    if (numeric > 100) {
+                        result.totalSections =
+                            numeric;
+                    }
+
+                }
+
+
+                if (
+                    result.percentage === 0 &&
+                    (
+                        lower.includes("perc") ||
+                        lower.includes("percent")
+                    ) &&
+                    numeric <= 100
+                ) {
+
+                    result.percentage =
+                        numeric;
+
+                }
+
+
+                if (
+                    lower.includes("geracao") ||
+                    lower === "idg"
+                ) {
+
+                    result.generation =
+                        value;
+
+                }
+
+            }
+
+
+            if (
+                typeof value === "object"
+            ) {
+
+                walk(value, depth + 1);
+
+            }
+
+        }
+
+    }
+
+
+    walk(data);
+
+
+    /*
+     Se não encontramos porcentagem,
+     calculamos pelas seções.
+    */
+
+    if (
+        result.percentage === 0 &&
+        result.sections > 0 &&
+        result.totalSections > 0
+    ) {
+
+        result.percentage =
+            (result.sections /
+                result.totalSections) * 100;
+
+    }
+
+
+    return result;
+
+}
+
+
+/*
+===========================================================
+ SOMA DE VOTOS
+===========================================================
+*/
+
+function calculateTotalVotes(candidates) {
+
+    return candidates.reduce(
+        (total, candidate) =>
+            total + candidate.votes,
+        0
+    );
+
+}
+
+
+/*
+===========================================================
+ RENDER DOS CANDIDATOS
+===========================================================
+*/
+
+function renderCandidates(candidates) {
+
+    if (!candidates.length) {
+
+        candidatesElement.innerHTML = `
+            <div style="color:#fca5a5;font-size:13px;">
+                Não foi possível localizar os candidatos
+                no formato esperado do arquivo.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    candidatesElement.innerHTML =
+        candidates.map((candidate, index) => {
+
+            const color =
+                candidateColor(index);
+
+
+            const percentage =
+                candidate.percentage;
+
+
+            return `
+
+                <div class="candidate">
+
+                    <div class="candidate-top">
+
+                        <div class="candidate-info">
+
+                            <div class="position">
+                                ${index + 1}
+                            </div>
+
+                            <div
+                                class="avatar"
+                                style="
+                                    background:
+                                    linear-gradient(
+                                        135deg,
+                                        ${color},
+                                        #0f172a
+                                    );
+                                "
+                            >
+                                ${candidate.name
+                                    .charAt(0)
+                                    .toUpperCase()}
+                            </div>
+
+                            <div>
+
+                                <div class="candidate-name">
+                                    ${escapeHtml(
+                                        candidate.name
+                                    )}
+                                </div>
+
+                                <div class="candidate-party">
+                                    ${
+                                        candidate.party
+                                            ? escapeHtml(
+                                                candidate.party
+                                            )
+                                            : "Candidato"
+                                    }
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="percentage"
+                            style="color:${color}"
+                        >
+                            ${formatPercentage(
+                                percentage
+                            )}
+                        </div>
+
+                    </div>
+
+
+                    <div class="bar">
+
+                        <div
+                            class="bar-fill"
+                            style="
+                                width:
+                                ${Math.min(
+                                    percentage,
+                                    100
+                                )}%;
+
+                                background:
+                                linear-gradient(
+                                    90deg,
+                                    ${color},
+                                    #ffffff22
+                                );
+                            "
+                        ></div>
+
+                    </div>
+
+
+                    <div class="candidate-meta">
+
+                        <span>
+                            ${formatNumber(
+                                candidate.votes
+                            )} votos
+                        </span>
+
+                        <span>
+                            ${formatPercentage(
+                                percentage
+                            )}
+                        </span>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/*
+===========================================================
+ RANKING
+===========================================================
+*/
+
+function renderRanking(candidates) {
+
+    if (!candidates.length) {
+
+        rankingElement.innerHTML = `
+            <div style="color:#64748b;font-size:13px;">
+                Nenhum dado disponível.
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    rankingElement.innerHTML =
+        candidates.map((candidate, index) => {
+
+            return `
+
+                <div class="ranking-item">
+
+                    <div class="rank-number">
+                        ${index + 1}
+                    </div>
+
+                    <div class="rank-info">
+
+                        <div class="rank-name">
+                            ${escapeHtml(
+                                candidate.name
+                            )}
+                        </div>
+
+                        <div class="rank-votes">
+                            ${formatNumber(
+                                candidate.votes
+                            )}
+                            votos
+                        </div>
+
+                    </div>
+
+                    <div class="rank-percent">
+                        ${formatPercentage(
+                            candidate.percentage
+                        )}
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/*
+===========================================================
+ ESCAPE HTML
+===========================================================
+*/
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+/*
+===========================================================
+ ATUALIZAR INTERFACE
+===========================================================
+*/
+
+function updateInterface(data) {
+
+    const candidates =
+        normalizeCandidates(data);
+
+
+    const general =
+        findGeneralData(data);
+
+
+    const totalVotes =
+        calculateTotalVotes(candidates);
+
+
+    sectionsElement.textContent =
+        formatNumber(general.sections);
+
+
+    totalSectionsElement.textContent =
+        formatNumber(general.totalSections);
+
+
+    totalVotesElement.textContent =
+        formatNumber(totalVotes);
+
+
+    percentageTotalElement.textContent =
+        general.percentage
+            ? formatPercentage(
+                general.percentage
+            )
+            : "—";
+
+
+    if (general.generation) {
+
+        lastGeneration =
+            general.generation;
+
+    }
+
+
+    lastGenerationElement.textContent =
+        lastGeneration
+            ? "IDG " + lastGeneration
+            : "Dados atualizados";
+
+
+    renderCandidates(candidates);
+
+    renderRanking(candidates);
+
+}
+
+
+/*
+===========================================================
+ BUSCAR TSE
+===========================================================
+*/
+
+async function loadResults() {
+
+    try {
+
+        console.log(
+            "Buscando dados do TSE..."
+        );
+
+
+        /*
+         Cache busting.
+
+         Evita que o navegador entregue
+         um JSON antigo armazenado em cache.
+        */
+
+        const url =
+            TSE_URL +
+            "?t=" +
+            Date.now();
+
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: "GET",
+
+                    cache: "no-store",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " +
+                response.status
+            );
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        updateInterface(data);
+
+
+        document.querySelector(".status");
+
+
+        console.log(
+            "Dados atualizados:",
+            new Date().toLocaleTimeString("pt-BR")
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Erro ao consultar TSE:",
+            error
+        );
+
+
+        lastGenerationElement.innerHTML = `
+            <span class="error">
+                Erro ao atualizar
+            </span>
+        `;
+
+    }
+
+}
+
+
+/*
+===========================================================
+ CONTADOR
+===========================================================
+*/
+
+function startCountdown() {
+
+    countdown = UPDATE_INTERVAL / 1000;
+
+
+    setInterval(() => {
+
+        countdown--;
+
+
+        if (countdown <= 0) {
+
+            countdown =
+                UPDATE_INTERVAL / 1000;
+
+        }
+
+
+        countdownElement.textContent =
+            countdown + "s";
+
+    }, 1000);
+
+}
+
+
+/*
+===========================================================
+ INICIALIZAÇÃO
+===========================================================
+*/
+
+loadResults();
+
+startCountdown();
+
+
+/*
+ Atualização automática.
+*/
+
+setInterval(
+    loadResults,
+    UPDATE_INTERVAL
+);
+
+</script>
 
 </body>
 </html>
