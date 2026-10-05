@@ -545,53 +545,12 @@
 
 
 <script>
-
-/*
-===========================================================
- CONFIGURAÇÃO
-===========================================================
-*/
-
-/*
- Cargo:
- 0001 = Presidente
-
- Eleição:
- 6257 = Eleição Geral Federal 2026
-
- Arquivo:
- resultado unificado do Brasil
-*/
-
 const TSE_URL =
-    "https://resultados.tse.jus.br/oficial/ele2026/6257/dados/br/br-c0001-e06257-u.json";
+    "https://resultados.tse.jus.br/oficial/ele2026/6257/dados/br/br-c0001-e006257-u.json";
 
+const UPDATE_INTERVAL = 60000;
 
-/*
- Atualização automática.
-
- 30 segundos é um intervalo conservador.
-*/
-
-const UPDATE_INTERVAL = 30000;
-
-
-/*
-===========================================================
- ESTADO
-===========================================================
-*/
-
-let lastGeneration = null;
-
-let countdown = 30;
-
-
-/*
-===========================================================
- ELEMENTOS
-===========================================================
-*/
+let countdown = 60;
 
 const candidatesElement =
     document.getElementById("candidates");
@@ -618,230 +577,94 @@ const countdownElement =
     document.getElementById("countdown");
 
 
-/*
-===========================================================
- FORMATAÇÃO
-===========================================================
-*/
-
-function formatNumber(number) {
-
+function numberBR(value) {
     return new Intl.NumberFormat("pt-BR")
-        .format(Number(number) || 0);
-
+        .format(Number(value) || 0);
 }
 
 
-function formatPercentage(number) {
-
-    return Number(number || 0)
-        .toLocaleString("pt-BR", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }) + "%";
-
+function percentageBR(value) {
+    return Number(value || 0).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }) + "%";
 }
 
 
-/*
-===========================================================
- CORES DOS CANDIDATOS
-===========================================================
-*/
-
-function candidateColor(index) {
-
-    const colors = [
-        "#2563eb",
-        "#ef4444",
-        "#16a34a",
-        "#f59e0b",
-        "#9333ea",
-        "#06b6d4",
-        "#ec4899",
-        "#64748b"
-    ];
-
-    return colors[index % colors.length];
-
+function escapeHTML(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
 
 /*
-===========================================================
- PEGAR VALOR DE FORMA FLEXÍVEL
-===========================================================
+=========================================================
+ LÊ O JSON REAL DO TSE
+=========================================================
 */
 
-function getNumber(obj, keys) {
+function parseTSE(data) {
 
-    for (const key of keys) {
+    const cargo =
+        data?.carg?.[0] || {};
 
-        if (
-            obj &&
-            obj[key] !== undefined &&
-            obj[key] !== null
-        ) {
+    const secoes =
+        data?.s || {};
 
-            const value = Number(obj[key]);
+    const votos =
+        data?.v || {};
 
-            if (!Number.isNaN(value)) {
-                return value;
-            }
-
-        }
-
-    }
-
-    return 0;
-
-}
+    const eleitorado =
+        data?.e || {};
 
 
-/*
-===========================================================
- NORMALIZAÇÃO DOS CANDIDATOS
-===========================================================
-*/
+    const candidatos = [];
 
-function normalizeCandidates(data) {
 
     /*
-     O formato do TSE pode possuir estruturas internas
-     diferentes conforme o tipo de arquivo.
+     Estrutura oficial:
 
-     Tentamos localizar o array de candidatos.
+     carg
+       agr
+         par
+           cand
     */
 
-    let possibleArrays = [];
+    for (const agrupamento of cargo.agr || []) {
 
-    if (Array.isArray(data)) {
-        possibleArrays.push(data);
-    }
+        for (const partido of agrupamento.par || []) {
 
-    const possibleKeys = [
-        "cand",
-        "candidatos",
-        "candidate",
-        "candidates",
-        "abrangencia",
-        "abr"
-    ];
+            for (const candidato of partido.cand || []) {
 
-    for (const key of possibleKeys) {
+                candidatos.push({
 
-        if (Array.isArray(data?.[key])) {
-            possibleArrays.push(data[key]);
-        }
+                    numero:
+                        String(candidato.n ?? ""),
 
-    }
+                    nome:
+                        candidato.nm ||
+                        candidato.nmu ||
+                        "Candidato",
 
-    /*
-     Procura recursivamente arrays contendo objetos.
-    */
+                    partido:
+                        partido.sg || "",
 
-    function recursiveFind(obj, depth = 0) {
+                    votos:
+                        Number(candidato.vap) || 0,
 
-        if (!obj || depth > 5) {
-            return [];
-        }
+                    percentual:
+                        Number(candidato.pvap) || 0,
 
-        if (Array.isArray(obj)) {
+                    situacao:
+                        candidato.st || ""
 
-            if (
-                obj.length &&
-                typeof obj[0] === "object"
-            ) {
-                return obj;
+                });
+
             }
-
-            return [];
-        }
-
-        if (typeof obj !== "object") {
-            return [];
-        }
-
-        for (const value of Object.values(obj)) {
-
-            const result =
-                recursiveFind(value, depth + 1);
-
-            if (result.length) {
-                return result;
-            }
-
-        }
-
-        return [];
-    }
-
-    const recursive =
-        recursiveFind(data);
-
-    possibleArrays.push(recursive);
-
-
-    let candidates = [];
-
-
-    for (const array of possibleArrays) {
-
-        for (const item of array) {
-
-            if (!item || typeof item !== "object") {
-                continue;
-            }
-
-            const name =
-                item.nm ||
-                item.nome ||
-                item.name ||
-                item.nm_cand ||
-                item.candidato ||
-                item.candidate;
-
-            if (!name) {
-                continue;
-            }
-
-
-            const votes =
-                getNumber(item, [
-                    "vap",
-                    "votos",
-                    "votes",
-                    "vv",
-                    "vot",
-                    "qt_votos"
-                ]);
-
-
-            const percentage =
-                getNumber(item, [
-                    "pvap",
-                    "percentual",
-                    "percentage",
-                    "percent",
-                    "pct"
-                ]);
-
-
-            candidates.push({
-
-                name: String(name),
-
-                votes: votes,
-
-                percentage: percentage,
-
-                party:
-                    item.sg_part ||
-                    item.partido ||
-                    item.party ||
-                    ""
-
-            });
 
         }
 
@@ -849,237 +672,124 @@ function normalizeCandidates(data) {
 
 
     /*
-     Remove duplicados.
+     Ordenação por votos.
     */
 
-    const unique = [];
-
-    const seen = new Set();
-
-    for (const candidate of candidates) {
-
-        const key =
-            candidate.name + "-" + candidate.votes;
-
-        if (!seen.has(key)) {
-
-            seen.add(key);
-
-            unique.push(candidate);
-
-        }
-
-    }
-
-
-    /*
-     Ordena pelo número de votos.
-    */
-
-    unique.sort(
-        (a, b) => b.votes - a.votes
+    candidatos.sort(
+        (a, b) => b.votos - a.votos
     );
 
 
-    return unique;
+    return {
 
-}
+        candidatos,
 
+        secoesTotal:
+            Number(secoes.ts) || 0,
 
-/*
-===========================================================
- INFORMAÇÕES GERAIS
-===========================================================
-*/
+        secoesApuradas:
+            Number(secoes.st) || 0,
 
-function findGeneralData(data) {
+        percentualApurado:
+            Number(secoes.pst) || 0,
 
-    let result = {
+        votosValidos:
+            Number(votos.vv) || 0,
 
-        sections: 0,
+        votosBrancos:
+            Number(votos.vb) || 0,
 
-        totalSections: 0,
+        votosNulos:
+            Number(votos.tvn) || 0,
 
-        percentage: 0,
+        eleitorado:
+            Number(eleitorado.te) || 0,
 
-        totalVotes: 0,
+        comparecimento:
+            Number(eleitorado.c) || 0,
 
-        generation: null
+        gerado:
+            data.dg && data.hg
+                ? `${data.dg} ${data.hg}`
+                : "—"
 
     };
 
-
-    function walk(obj, depth = 0) {
-
-        if (
-            !obj ||
-            typeof obj !== "object" ||
-            depth > 8
-        ) {
-            return;
-        }
+}
 
 
-        if (Array.isArray(obj)) {
+/*
+=========================================================
+ CORES
+=========================================================
+*/
 
-            for (const item of obj) {
-                walk(item, depth + 1);
-            }
-
-            return;
-        }
-
-
-        for (const [key, value] of Object.entries(obj)) {
-
-            const lower =
-                key.toLowerCase();
-
-
-            if (
-                typeof value === "number" ||
-                typeof value === "string"
-            ) {
-
-                const numeric =
-                    Number(value);
-
-                if (Number.isNaN(numeric)) {
-                    continue;
-                }
+const colors = [
+    "#2563eb",
+    "#ef4444",
+    "#16a34a",
+    "#f59e0b",
+    "#9333ea",
+    "#06b6d4",
+    "#ec4899",
+    "#64748b"
+];
 
 
-                if (
-                    result.sections === 0 &&
-                    (
-                        lower.includes("apurad") ||
-                        lower === "sap"
-                    )
-                ) {
-
-                    result.sections =
-                        numeric;
-
-                }
+function getColor(index) {
+    return colors[index % colors.length];
+}
 
 
-                if (
-                    result.totalSections === 0 &&
-                    (
-                        lower.includes("total_sec") ||
-                        lower.includes("totaliz") ||
-                        lower === "s"
-                    )
-                ) {
+/*
+=========================================================
+ RENDER PRINCIPAL
+=========================================================
+*/
 
-                    if (numeric > 100) {
-                        result.totalSections =
-                            numeric;
-                    }
+function render(data) {
 
-                }
-
-
-                if (
-                    result.percentage === 0 &&
-                    (
-                        lower.includes("perc") ||
-                        lower.includes("percent")
-                    ) &&
-                    numeric <= 100
-                ) {
-
-                    result.percentage =
-                        numeric;
-
-                }
-
-
-                if (
-                    lower.includes("geracao") ||
-                    lower === "idg"
-                ) {
-
-                    result.generation =
-                        value;
-
-                }
-
-            }
-
-
-            if (
-                typeof value === "object"
-            ) {
-
-                walk(value, depth + 1);
-
-            }
-
-        }
-
-    }
-
-
-    walk(data);
+    const result =
+        parseTSE(data);
 
 
     /*
-     Se não encontramos porcentagem,
-     calculamos pelas seções.
+     ESTATÍSTICAS
     */
 
-    if (
-        result.percentage === 0 &&
-        result.sections > 0 &&
-        result.totalSections > 0
-    ) {
+    sectionsElement.textContent =
+        numberBR(result.secoesApuradas);
 
-        result.percentage =
-            (result.sections /
-                result.totalSections) * 100;
+    totalSectionsElement.textContent =
+        numberBR(result.secoesTotal);
 
-    }
+    totalVotesElement.textContent =
+        numberBR(result.votosValidos);
 
-
-    return result;
-
-}
+    percentageTotalElement.textContent =
+        percentageBR(result.percentualApurado);
 
 
-/*
-===========================================================
- SOMA DE VOTOS
-===========================================================
-*/
-
-function calculateTotalVotes(candidates) {
-
-    return candidates.reduce(
-        (total, candidate) =>
-            total + candidate.votes,
-        0
-    );
-
-}
+    lastGenerationElement.textContent =
+        "Atualizado em " + result.gerado;
 
 
-/*
-===========================================================
- RENDER DOS CANDIDATOS
-===========================================================
-*/
+    /*
+     CANDIDATOS
+    */
 
-function renderCandidates(candidates) {
-
-    if (!candidates.length) {
+    if (!result.candidatos.length) {
 
         candidatesElement.innerHTML = `
-            <div style="color:#fca5a5;font-size:13px;">
-                Não foi possível localizar os candidatos
-                no formato esperado do arquivo.
+            <div style="
+                color:#fca5a5;
+                padding:20px 0;
+            ">
+                Nenhum candidato encontrado.
             </div>
         `;
+
+        rankingElement.innerHTML = "";
 
         return;
 
@@ -1087,14 +797,10 @@ function renderCandidates(candidates) {
 
 
     candidatesElement.innerHTML =
-        candidates.map((candidate, index) => {
+        result.candidatos.map((candidate, index) => {
 
             const color =
-                candidateColor(index);
-
-
-            const percentage =
-                candidate.percentage;
+                getColor(index);
 
 
             return `
@@ -1120,27 +826,31 @@ function renderCandidates(candidates) {
                                     );
                                 "
                             >
-                                ${candidate.name
-                                    .charAt(0)
-                                    .toUpperCase()}
+                                ${escapeHTML(
+                                    candidate.nome
+                                        .charAt(0)
+                                        .toUpperCase()
+                                )}
                             </div>
 
                             <div>
 
                                 <div class="candidate-name">
-                                    ${escapeHtml(
-                                        candidate.name
+                                    ${escapeHTML(
+                                        candidate.nome
                                     )}
                                 </div>
 
                                 <div class="candidate-party">
-                                    ${
-                                        candidate.party
-                                            ? escapeHtml(
-                                                candidate.party
-                                            )
-                                            : "Candidato"
-                                    }
+                                    ${escapeHTML(
+                                        candidate.partido
+                                    )}
+                                    ${candidate.numero
+                                        ? " • " +
+                                          escapeHTML(
+                                              candidate.numero
+                                          )
+                                        : ""}
                                 </div>
 
                             </div>
@@ -1152,8 +862,8 @@ function renderCandidates(candidates) {
                             class="percentage"
                             style="color:${color}"
                         >
-                            ${formatPercentage(
-                                percentage
+                            ${percentageBR(
+                                candidate.percentual
                             )}
                         </div>
 
@@ -1167,7 +877,7 @@ function renderCandidates(candidates) {
                             style="
                                 width:
                                 ${Math.min(
-                                    percentage,
+                                    candidate.percentual,
                                     100
                                 )}%;
 
@@ -1175,7 +885,7 @@ function renderCandidates(candidates) {
                                 linear-gradient(
                                     90deg,
                                     ${color},
-                                    #ffffff22
+                                    ${color}55
                                 );
                             "
                         ></div>
@@ -1186,14 +896,14 @@ function renderCandidates(candidates) {
                     <div class="candidate-meta">
 
                         <span>
-                            ${formatNumber(
-                                candidate.votes
+                            ${numberBR(
+                                candidate.votos
                             )} votos
                         </span>
 
                         <span>
-                            ${formatPercentage(
-                                percentage
+                            ${percentageBR(
+                                candidate.percentual
                             )}
                         </span>
 
@@ -1205,32 +915,13 @@ function renderCandidates(candidates) {
 
         }).join("");
 
-}
 
-
-/*
-===========================================================
- RANKING
-===========================================================
-*/
-
-function renderRanking(candidates) {
-
-    if (!candidates.length) {
-
-        rankingElement.innerHTML = `
-            <div style="color:#64748b;font-size:13px;">
-                Nenhum dado disponível.
-            </div>
-        `;
-
-        return;
-
-    }
-
+    /*
+     RANKING
+    */
 
     rankingElement.innerHTML =
-        candidates.map((candidate, index) => {
+        result.candidatos.map((candidate, index) => {
 
             return `
 
@@ -1243,14 +934,14 @@ function renderRanking(candidates) {
                     <div class="rank-info">
 
                         <div class="rank-name">
-                            ${escapeHtml(
-                                candidate.name
+                            ${escapeHTML(
+                                candidate.nome
                             )}
                         </div>
 
                         <div class="rank-votes">
-                            ${formatNumber(
-                                candidate.votes
+                            ${numberBR(
+                                candidate.votos
                             )}
                             votos
                         </div>
@@ -1258,9 +949,11 @@ function renderRanking(candidates) {
                     </div>
 
                     <div class="rank-percent">
-                        ${formatPercentage(
-                            candidate.percentage
+
+                        ${percentageBR(
+                            candidate.percentual
                         )}
+
                     </div>
 
                 </div>
@@ -1273,88 +966,9 @@ function renderRanking(candidates) {
 
 
 /*
-===========================================================
- ESCAPE HTML
-===========================================================
-*/
-
-function escapeHtml(value) {
-
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-
-}
-
-
-/*
-===========================================================
- ATUALIZAR INTERFACE
-===========================================================
-*/
-
-function updateInterface(data) {
-
-    const candidates =
-        normalizeCandidates(data);
-
-
-    const general =
-        findGeneralData(data);
-
-
-    const totalVotes =
-        calculateTotalVotes(candidates);
-
-
-    sectionsElement.textContent =
-        formatNumber(general.sections);
-
-
-    totalSectionsElement.textContent =
-        formatNumber(general.totalSections);
-
-
-    totalVotesElement.textContent =
-        formatNumber(totalVotes);
-
-
-    percentageTotalElement.textContent =
-        general.percentage
-            ? formatPercentage(
-                general.percentage
-            )
-            : "—";
-
-
-    if (general.generation) {
-
-        lastGeneration =
-            general.generation;
-
-    }
-
-
-    lastGenerationElement.textContent =
-        lastGeneration
-            ? "IDG " + lastGeneration
-            : "Dados atualizados";
-
-
-    renderCandidates(candidates);
-
-    renderRanking(candidates);
-
-}
-
-
-/*
-===========================================================
+=========================================================
  BUSCAR TSE
-===========================================================
+=========================================================
 */
 
 async function loadResults() {
@@ -1362,16 +976,9 @@ async function loadResults() {
     try {
 
         console.log(
-            "Buscando dados do TSE..."
+            "Consultando resultados oficiais..."
         );
 
-
-        /*
-         Cache busting.
-
-         Evita que o navegador entregue
-         um JSON antigo armazenado em cache.
-        */
 
         const url =
             TSE_URL +
@@ -1380,26 +987,15 @@ async function loadResults() {
 
 
         const response =
-            await fetch(
-                url,
-                {
-                    method: "GET",
-
-                    cache: "no-store",
-
-                    headers: {
-                        "Accept":
-                            "application/json"
-                    }
-                }
-            );
+            await fetch(url, {
+                cache: "no-store"
+            });
 
 
         if (!response.ok) {
 
             throw new Error(
-                "HTTP " +
-                response.status
+                `HTTP ${response.status}`
             );
 
         }
@@ -1409,14 +1005,15 @@ async function loadResults() {
             await response.json();
 
 
-        updateInterface(data);
+        render(data);
 
 
-        document.querySelector(".status");
+        lastGenerationElement.style.color =
+            "#86efac";
 
 
         console.log(
-            "Dados atualizados:",
+            "Atualizado:",
             new Date().toLocaleTimeString("pt-BR")
         );
 
@@ -1431,7 +1028,7 @@ async function loadResults() {
 
         lastGenerationElement.innerHTML = `
             <span class="error">
-                Erro ao atualizar
+                Falha ao atualizar
             </span>
         `;
 
@@ -1441,58 +1038,58 @@ async function loadResults() {
 
 
 /*
-===========================================================
+=========================================================
  CONTADOR
-===========================================================
+=========================================================
 */
 
-function startCountdown() {
+function resetCountdown() {
 
-    countdown = UPDATE_INTERVAL / 1000;
-
-
-    setInterval(() => {
-
-        countdown--;
-
-
-        if (countdown <= 0) {
-
-            countdown =
-                UPDATE_INTERVAL / 1000;
-
-        }
-
-
-        countdownElement.textContent =
-            countdown + "s";
-
-    }, 1000);
+    countdown =
+        UPDATE_INTERVAL / 1000;
 
 }
 
 
+setInterval(() => {
+
+    countdown--;
+
+    if (countdown <= 0) {
+        countdown =
+            UPDATE_INTERVAL / 1000;
+    }
+
+    countdownElement.textContent =
+        countdown + "s";
+
+}, 1000);
+
+
 /*
-===========================================================
- INICIALIZAÇÃO
-===========================================================
+=========================================================
+ PRIMEIRA CONSULTA
+=========================================================
 */
 
 loadResults();
 
-startCountdown();
-
 
 /*
- Atualização automática.
+=========================================================
+ ATUALIZAÇÃO AUTOMÁTICA
+=========================================================
 */
 
-setInterval(
-    loadResults,
-    UPDATE_INTERVAL
-);
+setInterval(() => {
+
+    loadResults();
+
+    resetCountdown();
+
+}, UPDATE_INTERVAL);
 
 </script>
-
+   
 </body>
 </html>
